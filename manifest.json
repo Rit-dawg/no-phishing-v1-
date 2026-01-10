@@ -1,0 +1,23 @@
+
+{
+  "name": "No-Phishing AI",
+  "short_name": "NoPhish",
+  "description": "AI-powered scam detection and security advisor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1053/1053043.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1053/1053043.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
