@@ -138,7 +138,9 @@ const App: React.FC = () => {
       <nav className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigateTo(Page.Home)}>
           <Logo score={assessment?.score || 0} className="w-11 h-10" />
-          <span className="font-bold tracking-tight text-xl text-white/90 uppercase">NO-PHISHING</span>
+          <div className="flex flex-col">
+            <span className="font-bold tracking-tight text-xl text-white/90 uppercase leading-none">NO-PHISHING</span>
+          </div>
         </div>
         <div className="hidden md:flex gap-10 text-[11px] font-bold uppercase tracking-widest">
           <button onClick={() => navigateTo(Page.Detect)} className={currentPage === Page.Detect ? (assessment && assessment.score > 60 ? 'text-red-400' : 'text-blue-400') : 'text-zinc-400 hover:text-white transition-colors'}>Verification</button>
@@ -216,7 +218,8 @@ const App: React.FC = () => {
             <section className="max-w-7xl mx-auto px-8 py-32 md:py-48 grid md:grid-cols-2 items-center gap-16">
               <div className="space-y-8 text-center md:text-left">
                 <h1 className="text-6xl md:text-8xl font-bold text-white tracking-tight leading-[1.05]">
-                  {"Forensic"} <br/> <span className="text-blue-500 italic">{"Security."}</span>
+                  Forensic <br/> 
+                  <span className={`text-blue-500 italic`}>{"Security."}</span>
                 </h1>
                 <p className="text-xl text-zinc-400 leading-relaxed max-w-lg">
                   Neutralize digital threats instantly using professional AI-driven situation analysis.
@@ -227,11 +230,11 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="hidden md:block">
-                 <div className="bg-[#111827] border border-white/10 p-1 rounded-lg shadow-2xl">
+                 <div className={`bg-[#111827] border border-white/10 p-1 rounded-lg shadow-2xl transition-all duration-1000`}>
                     <div className="bg-black/50 p-12 rounded-lg border border-white/5 font-mono text-sm text-blue-400 space-y-4">
-                      <p className="opacity-50">{"[SYSTEM] INITIALIZING CORE..."}</p>
-                      <p className="opacity-50">{"[SECURE] SCANNING THREAT VECTOR..."}</p>
-                      <p className="text-white">{"[STATUS] READY_"}</p>
+                      <p className="opacity-50">{"[SYSTEM] INITIALIZING DEFENSE CORE..."}</p>
+                      <p className="opacity-50">{"[SECURE] MOUNTING FORENSIC MODULES..."}</p>
+                      <p className="text-white">{"[STATUS] READY_V3.0"}</p>
                     </div>
                  </div>
               </div>
@@ -241,8 +244,8 @@ const App: React.FC = () => {
             <section className="bg-black/20 border-y border-white/5 py-32">
               <div className="max-w-7xl mx-auto px-8">
                 <div className="mb-20">
-                  <span className="text-blue-500 font-bold uppercase tracking-[0.3em] text-[10px]">Ecosystem</span>
-                  <h2 className="text-4xl font-bold text-white mt-4 uppercase tracking-tighter">Defense Capabilities</h2>
+                  <span className="text-blue-500 font-bold uppercase tracking-[0.3em] text-[10px]">Defense Ecosystem</span>
+                  <h2 className="text-4xl font-bold text-white mt-4 uppercase tracking-tighter">Core Capabilities</h2>
                 </div>
                 <div className="grid md:grid-cols-4 gap-6">
                   <div className="bg-white/5 border border-white/10 p-10 rounded-lg hover:border-blue-500/50 transition-all">
@@ -251,37 +254,35 @@ const App: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-4">Voice Intelligence</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Transcribe and analyze verbal threats in real-time with Live API integration.</p>
+                    <h3 className="text-lg font-bold text-white mb-4">Voice Intel</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Live transcription and real-time situational sentiment analysis for phone scams.</p>
                   </div>
-                  <div className="bg-white/5 border border-white/10 p-10 rounded-lg hover:border-blue-500/50 transition-all">
+                  <div className="bg-white/5 border border-white/10 p-10 rounded-lg hover:border-emerald-500/50 transition-all">
                     <div className="w-10 h-10 bg-emerald-600 rounded flex items-center justify-center mb-8">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-4">Search Grounding</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Every analysis is cross-referenced with live Google Search data for current trends.</p>
+                    <h3 className="text-lg font-bold text-white mb-4">Web Grounding</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Instant cross-referencing with Google Search for recent fraudulent trends and reports.</p>
                   </div>
-                  <div className="bg-white/5 border border-white/10 p-10 rounded-lg opacity-60 relative group overflow-hidden">
-                    <div className="absolute top-4 right-4 bg-zinc-800 text-[8px] font-bold px-2 py-1 rounded text-zinc-400 uppercase tracking-widest">v2.0 Beta</div>
-                    <div className="w-10 h-10 bg-zinc-700 rounded flex items-center justify-center mb-8">
+                  <div className={`transition-all duration-700 bg-white/5 border p-10 rounded-lg relative overflow-hidden border-white/10 hover:border-purple-500/50`}>
+                    <div className={`w-10 h-10 rounded flex items-center justify-center mb-8 bg-purple-600`}>
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <h3 className="text-lg font-bold text-white mb-4">Visual Forensics</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Analyzing screenshots and suspicious URLs for visual anomalies and phishing cues.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Analyzing screenshots and phishing UI layouts for visual anomalies using Gemini Vision.</p>
                   </div>
-                  <div className="bg-white/5 border border-white/10 p-10 rounded-lg opacity-60 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 bg-zinc-800 text-[8px] font-bold px-2 py-1 rounded text-zinc-400 uppercase tracking-widest">Upcoming</div>
-                    <div className="w-10 h-10 bg-zinc-700 rounded flex items-center justify-center mb-8">
+                  <div className={`transition-all duration-700 bg-white/5 border p-10 rounded-lg relative overflow-hidden border-white/10 hover:border-emerald-500/50`}>
+                    <div className={`w-10 h-10 rounded flex items-center justify-center mb-8 bg-emerald-600`}>
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
                     <h3 className="text-lg font-bold text-white mb-4">Leak Scanner</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Cross-checking your credentials against recent major database breaches.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Continuous dark-web monitoring for credentials and private data exposure.</p>
                   </div>
                 </div>
               </div>
@@ -292,27 +293,27 @@ const App: React.FC = () => {
               <div className="max-w-7xl mx-auto px-8">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
                   <div className="max-w-xl">
-                    <span className="text-blue-500 font-bold uppercase tracking-[0.3em] text-[10px]">Operations</span>
-                    <h2 className="text-4xl font-bold text-white mt-4 uppercase tracking-tighter">Analysis Protocol</h2>
+                    <span className="text-blue-500 font-bold uppercase tracking-[0.3em] text-[10px]">Manual of Operations</span>
+                    <h2 className="text-4xl font-bold text-white mt-4 uppercase tracking-tighter">How to use No-Phishing</h2>
                   </div>
-                  <p className="text-zinc-500 text-sm max-w-xs border-l border-white/10 pl-6">Follow these three steps to secure your digital footprint immediately.</p>
+                  <p className="text-zinc-500 text-sm max-w-xs border-l border-white/10 pl-6">Professional defense made accessible. Follow the three-step protocol below.</p>
                 </div>
                 <div className="grid md:grid-cols-3 gap-16 relative">
                   <div className="absolute top-1/2 left-0 w-full h-px bg-white/5 hidden md:block -translate-y-1/2 z-0"></div>
                   <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
                     <div className="w-16 h-16 bg-[#0a0f1a] border border-white/10 rounded-full flex items-center justify-center font-bold text-blue-500 mb-8 shadow-xl">01</div>
-                    <h3 className="text-xl font-bold text-white mb-4">Describe the Interaction</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Paste text from an email, describe a phone call, or type out a suspicious SMS you received.</p>
+                    <h3 className="text-xl font-bold text-white mb-4">Input Data</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Navigate to "Verification" and type out or use voice to describe the interaction you are facing.</p>
                   </div>
                   <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
                     <div className="w-16 h-16 bg-[#0a0f1a] border border-white/10 rounded-full flex items-center justify-center font-bold text-blue-500 mb-8 shadow-xl">02</div>
                     <h3 className="text-xl font-bold text-white mb-4">AI Verification</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Gemini Flash cross-references the input with millions of known scam patterns and live web data.</p>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Gemini Flash cross-references your situation with current global fraud databases and trends.</p>
                   </div>
                   <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
                     <div className="w-16 h-16 bg-[#0a0f1a] border border-white/10 rounded-full flex items-center justify-center font-bold text-blue-500 mb-8 shadow-xl">03</div>
-                    <h3 className="text-xl font-bold text-white mb-4">Execute Roadmap</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed">Receive a risk score and a step-by-step action plan to protect your assets if compromised.</p>
+                    <h3 className="text-xl font-bold text-white mb-4">Action Plan</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">Get a specific roadmap: who to call, what passwords to change, and how to lock down your assets.</p>
                   </div>
                 </div>
               </div>
@@ -325,20 +326,22 @@ const App: React.FC = () => {
             <div className={`flex-grow flex flex-col bg-black/40 border transition-all duration-700 ${assessment && assessment.score > 60 ? 'border-red-500/20' : 'border-white/5'} rounded-lg overflow-hidden`}>
               <div className="bg-black/40 border-b border-white/5 px-6 py-4 flex justify-between items-center">
                  <h2 className="text-xs font-bold text-white uppercase tracking-widest">Verification Stream</h2>
-                 {chatHistory.length > 0 && (
-                   <button onClick={() => {setChatHistory([]); setAssessment(null);}} className="text-[10px] font-bold uppercase text-zinc-500 hover:text-white">Reset Case</button>
-                 )}
+                 <div className="flex gap-4 items-center">
+                   {chatHistory.length > 0 && (
+                     <button onClick={() => {setChatHistory([]); setAssessment(null);}} className="text-[10px] font-bold uppercase text-zinc-500 hover:text-white transition-colors">Reset Case</button>
+                   )}
+                 </div>
               </div>
               
               <div className="flex-grow overflow-y-auto p-6 space-y-6 custom-scroll">
                 {chatHistory.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
-                    <p className="text-sm">Describe the suspicious interaction or paste the content below.</p>
+                    <p className="text-sm">Describe the suspicious interaction or use the mic to transcribe a call.</p>
                   </div>
                 )}
                 {chatHistory.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
-                    <div className={`max-w-[85%] px-5 py-4 rounded-lg text-sm ${msg.role === 'user' ? (assessment && assessment.score > 60 ? 'bg-red-700' : 'bg-blue-600') : 'bg-black/40 border border-white/5 text-zinc-300'} text-white`}>
+                    <div className={`max-w-[85%] px-5 py-4 rounded-lg text-sm ${msg.role === 'user' ? (assessment && assessment.score > 60 ? 'bg-red-700' : 'bg-blue-600 shadow-[0_4px_20px_rgba(37,99,235,0.2)]') : 'bg-black/40 border border-white/5 text-zinc-300'} text-white`}>
                       {msg.text}
                     </div>
                   </div>
@@ -467,4 +470,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
