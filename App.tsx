@@ -393,11 +393,12 @@ const App: React.FC = () => {
           </section>
         )}
       </main>
-      <footer className="mt-40 px-8 py-16 border-t border-white/5 bg-black/20 text-center"><p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em]">No-Phishing © 2025 • AI-Powered Forensic Defense</p></footer>
+      <footer className="mt-40 px-8 py-16 border-t border-white/5 bg-black/20 text-center"><p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em]">No-Phishing  2026 • AI-Powered Forensic Defense</p></footer>
     </div>
   );
 };
 
 export default App;
+
 
 
