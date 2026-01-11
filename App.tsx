@@ -274,20 +274,17 @@ const App: React.FC = () => {
                     <p className="text-zinc-500 text-sm leading-relaxed">Click on verification or on start analysis.</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 p-10 rounded-lg hover:border-emerald-500/50 transition-all">
-                    <div className="w-10 h-10 bg-emerald-600 rounded flex items-center justify-center mb-8">
-                    </div>
+                    
                     <h3 className="text-lg font-bold text-emerald mb-4">2.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">To check for data breaches enter your e-mail in the dashboard and check or describe a call,event,message or upload an image / document to recieve an assesment.</p>
                   </div>
                   <div className="bg-white/5 border border-purple-500/30 p-10 rounded-lg relative overflow-hidden hover:bg-purple-500/5 transition-all">
-                    <div className="w-10 h-10 rounded flex items-center justify-center mb-8 bg-purple-600">
-                    </div>
+                    
                     <h3 className="text-lg font-bold text-white mb-4">3.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">Read the assesment and courses of action and if appropriate report to autorities</p>
                   </div>
                   <div className="bg-white/5 border border-emerald-500/30 p-10 rounded-lg relative overflow-hidden hover:bg-emerald-500/5 transition-all">
-                    <div className="w-10 h-10 rounded flex items-center justify-center mb-8 bg-emerald-600">
-                    </div>
+                    
                     <h3 className="text-lg font-bold text-white mb-4">4.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">Report to authorities or read the advisories to build up your knowledge on how the scam occured.</p>
                   </div>
@@ -402,4 +399,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+
 
