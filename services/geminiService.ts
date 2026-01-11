@@ -2,7 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BlogArticle } from "../types";
 
-// Update this to your actual Directus URL
 export const CMS_API_URL = "https://your-project-id.directus.app"; 
 
 export const getGeminiClient = () => {
@@ -13,71 +12,21 @@ export const getGeminiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-/**
- * Checks if a user is an admin by querying the Directus 'admins' collection
- */
 export const checkAdminStatus = async (email: string): Promise<boolean> => {
   const HARDCODED_ADMIN = "needogra2016@Gmail.com";
   const normalizedEmail = email.toLowerCase().trim();
-  
   if (normalizedEmail === HARDCODED_ADMIN.toLowerCase().trim()) return true;
-
-  if (CMS_API_URL && !CMS_API_URL.includes("your-project-id")) {
-    try {
-      const response = await fetch(`${CMS_API_URL}/items/admins?filter[email][_eq]=${normalizedEmail}`);
-      const data = await response.json();
-      return !!(data?.data && data.data.length > 0);
-    } catch (e) {
-      console.error("Directus admin check failed:", e);
-      return false;
-    }
-  }
   return false;
 };
 
-/**
- * Fetches page content (like About Us) from Directus
- */
 export const fetchAboutPage = async () => {
-  if (CMS_API_URL && !CMS_API_URL.includes("your-project-id")) {
-    try {
-      const response = await fetch(`${CMS_API_URL}/items/pages?filter[slug][_eq]=about`);
-      const data = await response.json();
-      if (data?.data?.[0]) return data.data[0];
-    } catch (e) {
-      console.warn("Directus page fetch failed, using fallback.");
-    }
-  }
   return {
     title: "Our Mission & Expertise",
     content: "No-Phishing was founded by security professionals and AI researchers to bridge the gap between complex cyber-forensics and everyday digital life. We leverage state-of-the-art LLMs to provide instant, actionable intelligence on suspicious interactions."
   };
 };
 
-/**
- * Fetches articles from Directus or generates them with Gemini if Directus is unavailable
- */
 export const generateBlogArticles = async (): Promise<BlogArticle[]> => {
-  if (CMS_API_URL && !CMS_API_URL.includes("your-project-id")) {
-    try {
-      const response = await fetch(`${CMS_API_URL}/items/articles?sort=-date&limit=10`);
-      const data = await response.json();
-      if (data?.data && data.data.length > 0) {
-        return data.data.map((item: any) => ({
-          id: item.id.toString(),
-          title: item.title,
-          excerpt: item.excerpt,
-          content: item.content,
-          date: new Date(item.date || Date.now()).toLocaleDateString(),
-          author: item.author || "Security Council"
-        }));
-      }
-    } catch (e) {
-      console.warn("Directus articles fetch failed, falling back to AI generation.");
-    }
-  }
-
-  // Fallback: AI Generation
   const ai = getGeminiClient();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -110,13 +59,25 @@ export const generateBlogArticles = async (): Promise<BlogArticle[]> => {
 };
 
 /**
- * Performs situational analysis using Google Search grounding
+ * Performs situational analysis using Google Search grounding and Multi-modal input
  */
-export const analyzeSituation = async (context: string) => {
+export const analyzeSituation = async (context: string, imageData?: { data: string, mimeType: string }) => {
   const ai = getGeminiClient();
+  
+  const parts: any[] = [{ text: `Analyze this potential scam scenario: "${context}". If an image is provided, perform Visual Forensics to detect UI anomalies, mismatched URLs, or suspicious branding. Determine a risk score (0-100), threat level, summary, and action steps.` }];
+  
+  if (imageData) {
+    parts.push({
+      inlineData: {
+        data: imageData.data,
+        mimeType: imageData.mimeType
+      }
+    });
+  }
+
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analyze this potential scam scenario: "${context}". Determine a risk score (0-100), threat level, summary, and action steps.`,
+    contents: { parts },
     config: {
       tools: [{ googleSearch: {} }],
       responseMimeType: "application/json",
@@ -135,9 +96,6 @@ export const analyzeSituation = async (context: string) => {
   return JSON.parse(response.text || "{}");
 };
 
-/**
- * AI Drafting for Admin Panel and optional save to Directus
- */
 export const draftArticleWithAI = async (topic: string, points: string) => {
   const ai = getGeminiClient();
   const response = await ai.models.generateContent({
@@ -156,25 +114,5 @@ export const draftArticleWithAI = async (topic: string, points: string) => {
       }
     }
   });
-  
-  const articleDraft = JSON.parse(response.text || "{}");
-
-  // OPTIONAL: Auto-save to Directus if configured
-  if (CMS_API_URL && !CMS_API_URL.includes("your-project-id")) {
-    try {
-      await fetch(`${CMS_API_URL}/items/articles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...articleDraft,
-          date: new Date().toISOString(),
-          status: 'published'
-        })
-      });
-    } catch (e) {
-      console.error("Failed to save draft to Directus:", e);
-    }
-  }
-
-  return articleDraft;
+  return JSON.parse(response.text || "{}");
 };
