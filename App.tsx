@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [aboutData, setAboutData] = useState<{title: string, content: string} | null>(null);
   const [leakEmail, setLeakEmail] = useState('');
   const [leakStatus, setLeakStatus] = useState<'idle' | 'scanning' | 'clean' | 'leaked'>('idle');
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
   
   const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('auth_email'));
   const [isAdmin, setIsAdmin] = useState(false);
@@ -67,15 +68,33 @@ const App: React.FC = () => {
     const accepted = localStorage.getItem('tos_accepted');
     if (!accepted) setShowTOS(true);
     
+    const requestNotificationPermission = async () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+    };
+
     const loadStatic = async () => {
       try {
         const [abt, art] = await Promise.all([fetchAboutPage(), generateBlogArticles()]);
         setAboutData(abt);
         setArticles(art);
+        
+        if (art.length > 0) {
+          setHasNewNotifications(true);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New Security Advisories', {
+              body: `We've published ${art.length} new cyber-security whitepapers.`,
+              icon: 'https://cdn-icons-png.flaticon.com/512/1053/1053043.png'
+            });
+          }
+        }
       } catch (err) {
         console.error("Failed to load initial data", err);
       }
     };
+    
+    requestNotificationPermission();
     loadStatic();
   }, []);
 
@@ -104,6 +123,7 @@ const App: React.FC = () => {
 
   const navigateTo = (p: Page) => {
     setCurrentPage(p);
+    if (p === Page.Blog) setHasNewNotifications(false);
     if (p !== Page.Blog) setSelectedArticle(null);
     if (p !== Page.Detect) setAssessment(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -145,7 +165,10 @@ const App: React.FC = () => {
         </div>
         <div className="hidden md:flex gap-10 text-[11px] font-bold uppercase tracking-widest">
           <button onClick={() => navigateTo(Page.Detect)} className={currentPage === Page.Detect ? (assessment && assessment.score > 60 ? 'text-red-400' : 'text-blue-400') : 'text-zinc-400 hover:text-white transition-colors'}>Verification</button>
-          <button onClick={() => navigateTo(Page.Blog)} className={currentPage === Page.Blog ? 'text-blue-400' : 'text-zinc-400 hover:text-white transition-colors'}>Advisories</button>
+          <button onClick={() => navigateTo(Page.Blog)} className={`relative ${currentPage === Page.Blog ? 'text-blue-400' : 'text-zinc-400 hover:text-white transition-colors'}`}>
+            Advisories
+            {hasNewNotifications && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full border border-black animate-pulse"></span>}
+          </button>
           <button onClick={() => navigateTo(Page.About)} className={currentPage === Page.About ? 'text-blue-400' : 'text-zinc-400 hover:text-white transition-colors'}>About</button>
           {isAdmin && <button onClick={() => navigateTo(Page.Admin)} className="text-emerald-400">Panel</button>}
         </div>
@@ -274,17 +297,14 @@ const App: React.FC = () => {
                     <p className="text-zinc-500 text-sm leading-relaxed">Click on verification or on start analysis.</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 p-10 rounded-lg hover:border-emerald-500/50 transition-all">
-                    
                     <h3 className="text-lg font-bold text-emerald mb-4">2.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">To check for data breaches enter your e-mail in the dashboard and check or describe a call,event,message or upload an image / document to recieve an assesment.</p>
                   </div>
                   <div className="bg-white/5 border border-purple-500/30 p-10 rounded-lg relative overflow-hidden hover:bg-purple-500/5 transition-all">
-                    
                     <h3 className="text-lg font-bold text-white mb-4">3.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">Read the assesment and courses of action and if appropriate report to autorities</p>
                   </div>
                   <div className="bg-white/5 border border-emerald-500/30 p-10 rounded-lg relative overflow-hidden hover:bg-emerald-500/5 transition-all">
-                    
                     <h3 className="text-lg font-bold text-white mb-4">4.</h3>
                     <p className="text-zinc-500 text-sm leading-relaxed">Report to authorities or read the advisories to build up your knowledge on how the scam occured.</p>
                   </div>
@@ -393,12 +413,9 @@ const App: React.FC = () => {
           </section>
         )}
       </main>
-      <footer className="mt-40 px-8 py-16 border-t border-white/5 bg-black/20 text-center"><p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em]">No-Phishing  2026 • AI-Powered Forensic Defense</p></footer>
+      <footer className="mt-40 px-8 py-16 border-t border-white/5 bg-black/20 text-center"><p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.4em]">No-Phishing 2026 • AI-Powered Forensic Defense</p></footer>
     </div>
   );
 };
 
 export default App;
-
-
-
