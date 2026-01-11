@@ -13,6 +13,7 @@ export interface RiskAssessment {
   score: number;
   threatLevel: 'Low' | 'Medium' | 'High' | 'Critical';
   summary: string;
+  reasoning: string;
   actionSteps: string[];
 }
 
