@@ -289,7 +289,6 @@ const App: React.FC = () => {
             </div>
 
             <div className="w-full md:w-[400px] shrink-0 space-y-6">
-              {/* LEAK SCANNER WIDGET */}
               <div className="bg-black/40 border border-emerald-500/20 p-8 rounded-lg">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -318,11 +317,17 @@ const App: React.FC = () => {
               </div>
 
               {assessment && (
-                <div className={`bg-black/60 border transition-all duration-700 ${assessment.score > 60 ? 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'border-white/10'} p-8 rounded-lg animate-in fade-in slide-in-from-right-5`}>
-                   <div className="mb-8">
+                <div className={`bg-black/60 border transition-all duration-700 ${assessment.score > 60 ? 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'border-white/10'} p-8 rounded-lg animate-in fade-in slide-in-from-right-5 space-y-8`}>
+                   <div>
                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Forensic Score</span>
                      <h3 className="text-3xl font-bold uppercase tracking-tighter" style={{ color: assessment.score > 70 ? '#ef4444' : (assessment.score > 40 ? '#f59e0b' : '#3b82f6') }}>{assessment.threatLevel} ({assessment.score}%)</h3>
                    </div>
+
+                   <div className="p-4 bg-black/40 border border-white/5 rounded font-mono text-[11px] leading-relaxed">
+                     <span className="text-blue-500 block mb-2 font-bold uppercase tracking-widest">Analysis Reasoning:</span>
+                     <p className="text-zinc-400 italic">"{assessment.reasoning}"</p>
+                   </div>
+
                    <div className="space-y-6">
                      <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">Action Roadmap</h4>
                      <ul className="space-y-3">
@@ -336,7 +341,6 @@ const App: React.FC = () => {
             </div>
           </section>
         )}
-        {/* ... Rest of Pages (Blog, About, Admin) ... */}
         {currentPage === Page.Blog && (
           <section className="max-w-6xl mx-auto px-8 py-24">
             {selectedArticle ? (
@@ -366,4 +370,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
