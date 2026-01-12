@@ -3,7 +3,10 @@ import { config, fields, collection } from '@keystatic/core';
 
 export default config({
   storage: {
-    kind: 'local',
+    kind: 'github',
+   repo: {
+     owner: Rit-dawg,
+     name: N-P-CMS
   },
   collections: {
     advisories: collection({
