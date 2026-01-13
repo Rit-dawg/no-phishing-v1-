@@ -23,7 +23,7 @@ export const checkAdminStatus = async (email: string): Promise<boolean> => {
 export const fetchAboutPage = async () => {
   return {
     title: "Our Mission & Expertise",
-    content: "No-Phishing was founded by security professionals and AI researchers to bridge the gap between complex cyber-forensics and everyday digital life. We leverage state-of-the-art LLMs to provide instant, actionable intelligence on suspicious interactions."
+    content: "No-Phishing provides professional situational awareness and forensic reasoning to protect global digital assets."
   };
 };
 
@@ -31,7 +31,7 @@ export const generateBlogArticles = async (): Promise<BlogArticle[]> => {
   const ai = getGeminiClient();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: "Generate 3 professional cyber-security whitepapers on phishing trends for adults. Return JSON array of objects with id, title, excerpt, content, date, author.",
+    contents: "Generate 3 professional security advisories on phishing trends. Return JSON array with id, title, excerpt, content, date, author.",
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -62,12 +62,10 @@ export const generateBlogArticles = async (): Promise<BlogArticle[]> => {
 export const analyzeSituation = async (context: string, imageData?: { data: string, mimeType: string }) => {
   const ai = getGeminiClient();
   
-  const parts: any[] = [{ text: `Analyze this potential scam scenario: "${context}". 
-  If an image is provided, perform Visual Forensics to detect UI anomalies, mismatched URLs, or suspicious branding. 
-  
-  CRITICAL: You must provide a 'reasoning' section explaining EXACTLY how you reached your conclusion, citing specific patterns, psychological tactics, or technical inconsistencies found.
-  
-  Determine a risk score (0-100), threat level, summary, forensic reasoning, and action steps.` }];
+  const parts: any[] = [{ text: `Analyze this potential scam: "${context}". 
+  Perform Visual Forensics (if image) and psychological trigger analysis. 
+  Explain EXACTLY how you reached your conclusion citing patterns or inconsistencies.
+  Determine risk score (0-100), threat level, summary, reasoning, and action steps.` }];
   
   if (imageData) {
     parts.push({
@@ -90,7 +88,7 @@ export const analyzeSituation = async (context: string, imageData?: { data: stri
           score: { type: Type.NUMBER },
           threatLevel: { type: Type.STRING },
           summary: { type: Type.STRING },
-          reasoning: { type: Type.STRING, description: "Detailed forensic explanation of how the model reached this risk score." },
+          reasoning: { type: Type.STRING },
           actionSteps: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
         required: ["score", "threatLevel", "summary", "reasoning", "actionSteps"]
@@ -104,7 +102,7 @@ export const draftArticleWithAI = async (topic: string, points: string) => {
   const ai = getGeminiClient();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Draft a professional security advisory about "${topic}". Points to include: ${points}.`,
+    contents: `Draft a security advisory about "${topic}". Points: ${points}.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
