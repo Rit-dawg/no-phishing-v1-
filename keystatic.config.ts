@@ -6,7 +6,7 @@ export default config({
     kind: 'github',
    repo: {
      owner: Rit-dawg,
-     name: N-P-CMS
+     name: no-phishing-v1-
   },
   collections: {
     advisories: collection({
