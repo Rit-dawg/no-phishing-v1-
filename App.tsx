@@ -4,7 +4,6 @@ import { Page, BlogArticle, RiskAssessment } from './types';
 import { 
   analyzeSituation, 
   generateBlogArticles, 
-  checkAdminStatus, 
   fetchAboutPage,
 } from './services/geminiService';
 import { LiveAssistant } from './components/LiveAssistant';
@@ -203,7 +202,7 @@ No-Phishing Platform | Intelligence Unit
             <section className="max-w-7xl mx-auto px-8 py-32 md:py-48 grid md:grid-cols-2 items-center gap-16">
               <div className="space-y-8 text-center md:text-left">
                 <div className="inline-block border border-blue-500/30 bg-blue-500/5 px-4 py-2 rounded-full">
-                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Next-Gen Scams vs AI Reasoning</span>
+                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">AI Forensic Verification</span>
                 </div>
                 <h1 className="text-6xl md:text-8xl font-extrabold text-white tracking-tight leading-[0.95]">
                   {language === 'EN' ? 'Detect Scams.' : 'घोटाले का पता लगाएं।'} <br/>
@@ -211,8 +210,8 @@ No-Phishing Platform | Intelligence Unit
                 </h1>
                 <p className="text-xl text-zinc-400 leading-relaxed max-w-lg">
                   {language === 'EN' 
-                    ? 'No-Phishing provides instant forensic analysis of suspicious links, voices, and messages.' 
-                    : 'नो-फ़िशिंग संदिग्ध लिंक, आवाज़ और संदेशों का त्वरित फ़ॉरेंसिक विश्लेषण प्रदान करता है।'}
+                    ? 'No-Phishing provides instant forensic analysis of suspicious links, voices, and messages using Multi-modal AI.' 
+                    : 'नो-फ़िशिंग मल्टी-मॉडल एआई का उपयोग करके संदिग्ध लिंक, आवाज़ और संदेशों का त्वरित फ़ॉरेंसिक विश्लेषण प्रदान करता है।'}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 pt-6">
                   <button onClick={() => navigateTo(Page.Detect)} className="bg-white text-black px-10 py-5 rounded font-bold text-sm uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">Analyze Evidence</button>
@@ -221,8 +220,8 @@ No-Phishing Platform | Intelligence Unit
               <div className="hidden md:block relative">
                  <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 p-1 rounded-lg shadow-2xl relative z-10">
                     <div className="bg-black/50 p-12 rounded-lg border border-white/5 font-mono text-xs text-blue-400 space-y-4">
-                      <p className="text-white font-bold">SYSTEM_READY</p>
-                      <p className="opacity-70 text-zinc-500">Awaiting multi-modal forensic payload...</p>
+                      <p className="text-white font-bold">NP_KERNEL_LOADED</p>
+                      <p className="opacity-70 text-zinc-500">Monitoring for adversarial payloads...</p>
                       <div className="flex gap-1">
                         <div className="w-1.5 h-3 bg-blue-500 animate-pulse"></div>
                       </div>
@@ -239,12 +238,12 @@ No-Phishing Platform | Intelligence Unit
               </div>
               <div className="grid md:grid-cols-3 gap-8">
                 {[
-                  { title: "Visual Forensics", desc: "Upload screenshots of suspicious messages or websites to detect UI anomalies and hidden traps.", icon: "📸" },
-                  { title: "Voice Intelligence", desc: "Real-time transcription and behavioral analysis of suspicious calls to flag psychological manipulation.", icon: "🎙️" },
-                  { title: "Breach Monitoring", desc: "Scan your credentials against global database leaks to identify if your identity is compromised.", icon: "🔍" },
-                  { title: "Threat Reasoning", desc: "Get detailed explanations of why a scenario is flagged, citing specific fraud patterns.", icon: "🧠" },
-                  { title: "Case Export", desc: "Generate professionally formatted forensic reports to share with your bank or authorities.", icon: "📄" },
-                  { title: "Global Intel", desc: "Grounding in real-time web search results to identify emerging scam trends as they happen.", icon: "🌐" }
+                  { title: "Visual Forensics", desc: "Scan screenshots for hidden malicious code, UI spoofing, and invalid SSL indicators.", icon: "📸" },
+                  { title: "Voice Behavioral Intel", desc: "Analyze suspicious voice calls for stress patterns and social engineering keywords.", icon: "🎙️" },
+                  { title: "Deep-Breach Scan", desc: "Search the dark web for your email/phone to see if your data is being traded.", icon: "🔍" },
+                  { title: "Pattern Reasoning", desc: "AI provides the 'Why' behind every risk score, identifying the specific scam methodology.", icon: "🧠" },
+                  { title: "Forensic Report", desc: "Export high-fidelity reports for law enforcement or insurance documentation.", icon: "📄" },
+                  { title: "Live Grounding", desc: "Connected to Google Search to verify trending scams and fraudulent business identities.", icon: "🌐" }
                 ].map((f, i) => (
                   <div key={i} className="bg-white/5 border border-white/5 p-10 rounded-2xl hover:bg-white/[0.07] transition-all">
                     <div className="text-4xl mb-6">{f.icon}</div>
@@ -259,19 +258,19 @@ No-Phishing Platform | Intelligence Unit
             <section className="bg-white/[0.02] border-y border-white/5 px-8 py-32">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-20">
-                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Protocol</h2>
-                  <h3 className="text-4xl font-bold text-white uppercase">How to use No-Phishing</h3>
+                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Operation Guide</h2>
+                  <h3 className="text-4xl font-bold text-white uppercase">How to Use the Platform</h3>
                 </div>
                 <div className="grid md:grid-cols-4 gap-12">
                   {[
-                    { step: "01", title: "Collect Evidence", desc: "Take a screenshot of the suspicious message, URL, or record the context of the call." },
-                    { step: "02", title: "Upload / Describe", desc: "Go to the Forensic Lab. Upload your image or describe the interaction using voice or text." },
-                    { step: "03", title: "AI Analysis", desc: "Gemini AI scans the input, searches the web, and performs reasoning to calculate a risk score." },
-                    { step: "04", title: "Take Action", desc: "Review the threat level and follow the urgent defensive steps provided by the analyst." }
+                    { step: "01", title: "Input Evidence", desc: "Upload a screenshot or type a description of the suspicious call/message." },
+                    { step: "02", title: "Initiate Scan", desc: "Click 'Analyze Evidence'. Our AI models perform deep-packet and semantic inspection." },
+                    { step: "03", title: "Review Score", desc: "Check the Risk Meter. Scores above 60% indicate highly probable fraudulent activity." },
+                    { step: "04", title: "Follow Protocol", desc: "Execute the action steps immediately—block, report, or reset your credentials." }
                   ].map((s, i) => (
                     <div key={i} className="relative">
                       <div className="text-5xl font-black text-blue-500/20 absolute -top-10 -left-4">{s.step}</div>
-                      <h4 className="text-lg font-bold text-white mb-4 relative z-10">{s.title}</h4>
+                      <h4 className="text-lg font-bold text-white mb-4 relative z-10 uppercase tracking-tighter">{s.title}</h4>
                       <p className="text-zinc-500 text-sm leading-relaxed">{s.desc}</p>
                     </div>
                   ))}
@@ -287,7 +286,7 @@ No-Phishing Platform | Intelligence Unit
               <div className="bg-black/40 border-b border-white/5 px-6 py-4 flex justify-between items-center">
                  <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-spin' : 'bg-blue-500 animate-pulse'}`}></div>
-                    <h2 className="text-xs font-bold text-white uppercase tracking-widest">Forensic Verification</h2>
+                    <h2 className="text-xs font-bold text-white uppercase tracking-widest">Forensic Lab</h2>
                  </div>
                  <div className="flex gap-4 items-center">
                    {assessment && <button onClick={handleExportReport} className="text-[10px] font-bold uppercase text-blue-400 hover:text-white transition-colors border border-blue-400/20 px-3 py-1.5 rounded bg-blue-400/5">Export Case Report</button>}
@@ -303,7 +302,7 @@ No-Phishing Platform | Intelligence Unit
                 {chatHistory.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
                     <div className={`max-w-[85%] px-6 py-5 rounded-2xl text-sm ${msg.role === 'user' ? (assessment && assessment.score > 60 ? 'bg-red-700' : 'bg-blue-600') : 'bg-black/60 border border-white/5 text-zinc-300 font-medium'} text-white shadow-xl`}>
-                      {msg.role === 'analyst' && <span className="block text-[9px] uppercase font-bold text-blue-400 mb-2 tracking-widest">AI Analyst:</span>}
+                      {msg.role === 'analyst' && <span className="block text-[9px] uppercase font-bold text-blue-400 mb-2 tracking-widest">Forensic AI:</span>}
                       {msg.text}
                     </div>
                   </div>
@@ -318,13 +317,13 @@ No-Phishing Platform | Intelligence Unit
             <div className="w-full md:w-[400px] shrink-0 space-y-6">
               <div className="bg-black/40 border border-emerald-500/20 p-8 rounded-lg shadow-xl relative overflow-hidden group">
                 <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Credential Scan
+                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Dark Web Leak Check
                 </h4>
                 <div className="space-y-4">
                   <input 
                     value={leakEmail} 
                     onChange={(e) => setLeakEmail(e.target.value)} 
-                    placeholder="Email or Phone" 
+                    placeholder="Email or Phone Number" 
                     className="w-full bg-black/60 border border-white/10 p-4 rounded-lg text-xs focus:border-emerald-500 outline-none transition-all" 
                   />
                   <button 
@@ -332,7 +331,7 @@ No-Phishing Platform | Intelligence Unit
                     disabled={leakStatus === 'scanning' || !leakEmail}
                     className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(5,150,105,0.2)]"
                   >
-                    {leakStatus === 'scanning' ? 'Searching Database...' : 'Run Breach Check'}
+                    {leakStatus === 'scanning' ? 'Scanning Leaks...' : 'Run Forensic Scan'}
                   </button>
                   {leakStatus !== 'idle' && leakStatus !== 'scanning' && (
                     <div className={`p-4 rounded-lg text-center text-xs font-bold uppercase animate-in zoom-in-95 ${leakStatus === 'leaked' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
@@ -345,15 +344,15 @@ No-Phishing Platform | Intelligence Unit
               {assessment && (
                 <div className={`bg-black/60 border transition-all duration-700 ${assessment.score > 60 ? 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'border-white/10'} p-8 rounded-lg animate-in fade-in slide-in-from-right-5 space-y-8`}>
                    <div>
-                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Risk Level</span>
+                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Calculated Threat</span>
                      <h3 className="text-4xl font-black uppercase tracking-tighter transition-colors" style={{ color: assessment.score > 70 ? '#ef4444' : (assessment.score > 40 ? '#f59e0b' : '#3b82f6') }}>{assessment.threatLevel} ({assessment.score}%)</h3>
                    </div>
                    <div className="p-5 bg-black/60 border border-white/5 rounded-xl font-mono text-[11px] leading-relaxed relative">
-                     <span className="text-blue-500 block mb-3 font-bold uppercase tracking-widest border-b border-blue-500/20 pb-1">Forensic Findings:</span>
+                     <span className="text-blue-500 block mb-3 font-bold uppercase tracking-widest border-b border-blue-500/20 pb-1">AI Reasoning Log:</span>
                      <p className="text-zinc-400 italic">"{assessment.reasoning}"</p>
                    </div>
                    <div className="space-y-3">
-                     <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Defensive Steps:</span>
+                     <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest text-blue-400">Tactical Defense Plan:</span>
                      <ul className="space-y-2">
                        {assessment.actionSteps.map((step, idx) => (
                          <li key={idx} className="flex gap-3 text-[11px] text-zinc-300 items-start">
@@ -406,9 +405,9 @@ No-Phishing Platform | Intelligence Unit
         {currentPage === Page.About && (
           <section className="max-w-4xl mx-auto px-8 py-32 text-center">
             <div className="space-y-12">
-               <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{aboutData?.title || 'Our Mission'}</h2>
+               <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{aboutData?.title || 'Our Intelligence Mission'}</h2>
                <p className="text-2xl text-zinc-400 leading-relaxed font-light">
-                 {aboutData?.content || "No-Phishing provides real-time situational awareness."}
+                 {aboutData?.content || "No-Phishing provides real-time situational awareness and AI forensic reasoning to protect global citizens."}
                </p>
             </div>
           </section>
@@ -417,7 +416,7 @@ No-Phishing Platform | Intelligence Unit
       <footer className="mt-40 px-8 py-20 border-t border-white/5 bg-black/40 text-center">
         <div className="flex flex-col items-center gap-6">
            <Logo score={0} className="w-10 h-10 grayscale opacity-20" />
-           <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.5em]">No-Phishing 2026 • AI Intelligence Unit</p>
+           <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.5em]">No-Phishing 2026 • AI Forensic Division</p>
         </div>
       </footer>
     </div>
