@@ -2,26 +2,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   base: './',
   plugins: [react()],
   define: {
+    // Inject environment variables directly into the global scope
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ""),
     'process.env.ADMIN_HARDCODED': JSON.stringify(process.env.ADMIN_HARDCODED || ""),
+    'process.platform': JSON.stringify('browser'),
+    'process.version': JSON.stringify(''),
   },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     target: 'esnext',
-    minify: 'esbuild',
     rollupOptions: {
-      // Ensure we don't try to bundle Node.js internals
-      external: [],
+      // Force ignore these modules if they are somehow pulled in
+      external: ['fsevents', 'fs', 'path', 'source-map-js'],
     }
   },
-  // Prevent Vite from trying to optimize or resolve Node-only packages during dev/build
   optimizeDeps: {
-    include: ['react', 'react-dom', '@google/genai']
+    // Do not try to optimize keystatic or rollup-related bits
+    exclude: ['@keystatic/core', 'rollup', 'fsevents']
   }
 });
