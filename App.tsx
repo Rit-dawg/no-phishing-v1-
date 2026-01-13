@@ -4,7 +4,6 @@ import { Page, BlogArticle, RiskAssessment } from './types';
 import { 
   analyzeSituation, 
   generateBlogArticles, 
-  fetchAboutPage,
   getGeminiClient,
 } from './services/geminiService';
 import { LiveAssistant } from './components/LiveAssistant';
@@ -44,7 +43,6 @@ const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<{role: string, text: string}[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
   
-  // Leak Checker State
   const [leakEmail, setLeakEmail] = useState('');
   const [leakResult, setLeakResult] = useState<{ status: 'secure' | 'compromised' | 'loading' | null, details?: string }>({ status: null });
 
@@ -121,7 +119,6 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col selection:bg-cyan-500/30 font-inter">
       <GeometricBackground score={assessment?.score || 0} />
       
-      {/* Navigation */}
       <header className="px-8 py-5 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
         <nav className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigateTo(Page.Home)}>
@@ -139,7 +136,6 @@ const App: React.FC = () => {
       <main className="flex-grow">
         {currentPage === Page.Home && (
           <div className="space-y-32 pb-40">
-            {/* Hero */}
             <section className="relative pt-32 px-8 max-w-7xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-12">
@@ -169,9 +165,9 @@ const App: React.FC = () => {
                         <span className="text-[10px] font-mono text-[#1cb5c4]">ANALYSIS_V2.0.4</span>
                       </div>
                       <div className="space-y-4 font-mono text-[11px] text-[#1cb5c4]/60">
-                        <p className="flex justify-between"><span>{">"} SCANNING_HEX_ADJUST...</span><span className="text-white">OK</span></p>
-                        <p className="flex justify-between"><span>{">"} NLP_SENTIMENT_CORE...</span><span className="text-white">ACTIVE</span></p>
-                        <p className="flex justify-between"><span>{">"} PHISHING_VECTOR_MAP...</span><span className="text-white">12.4k TPS</span></p>
+                        <p className="flex justify-between"><span>{"> "}SCANNING_HEX_ADJUST...</span><span className="text-white">OK</span></p>
+                        <p className="flex justify-between"><span>{"> "}NLP_SENTIMENT_CORE...</span><span className="text-white">ACTIVE</span></p>
+                        <p className="flex justify-between"><span>{"> "}PHISHING_VECTOR_MAP...</span><span className="text-white">12.4k TPS</span></p>
                         <div className="h-px bg-white/10 my-4"></div>
                         <div className="grid grid-cols-6 gap-2 opacity-40">
                           {Array.from({length: 18}).map((_, i) => <div key={i} className="h-8 bg-[#1cb5c4]/20 rounded-sm"></div>)}
@@ -182,7 +178,6 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            {/* Leak Checker Tool */}
             <section className="max-w-7xl mx-auto px-8">
                <div className="bg-zinc-900 border border-[#1cb5c4]/20 rounded-3xl p-12 md:p-16 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -221,57 +216,6 @@ const App: React.FC = () => {
                           <p className="text-xs text-zinc-400 font-mono leading-relaxed">{leakResult.details}</p>
                        </div>
                      )}
-                  </div>
-               </div>
-            </section>
-
-            {/* Features Section */}
-            <section className="max-w-7xl mx-auto px-8">
-               <div className="mb-20">
-                  <span className="text-[10px] font-black text-[#1cb5c4] uppercase tracking-[0.4em] block mb-4">The Platform</span>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter">Advanced Features</h2>
-               </div>
-               <div className="grid md:grid-cols-3 gap-px bg-white/5 border border-white/5">
-                  {[
-                    { title: "Forensic Reasoning", desc: "Multi-modal AI that checks text and visuals for deep-fake patterns.", icon: "01" },
-                    { title: "Psychological Profiling", desc: "Identifies urgency, fear, and authority-based manipulation tactics.", icon: "02" },
-                    { title: "Network Grounding", desc: "Live web-search grounding to verify claims against global news databases.", icon: "03" }
-                  ].map((f, i) => (
-                    <div key={i} className="bg-[#0a0a0a] p-12 space-y-6 group hover:bg-zinc-900 transition-colors">
-                      <span className="text-4xl font-black text-white/10 group-hover:text-[#1cb5c4]/20 transition-colors">{f.icon}</span>
-                      <h3 className="text-xl font-black uppercase">{f.title}</h3>
-                      <p className="text-zinc-500 text-sm leading-relaxed">{f.desc}</p>
-                    </div>
-                  ))}
-               </div>
-            </section>
-
-            {/* How to Use Section */}
-            <section className="max-w-7xl mx-auto px-8">
-               <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-12 md:p-24 relative overflow-hidden">
-                  <div className="relative z-10 grid lg:grid-cols-2 gap-20">
-                     <div>
-                        <h2 className="text-5xl font-black uppercase tracking-tighter mb-8 leading-none">Operational <br/> Protocol</h2>
-                        <p className="text-zinc-400 mb-12">How to deploy No-Phishing for immediate threat assessment.</p>
-                        <div className="space-y-8">
-                           {[
-                             { step: "01", label: "Capture Evidence", text: "Screenshot the suspicious email, message, or website." },
-                             { step: "02", label: "Neural Upload", text: "Upload the image or paste the text into our Forensic Scanner." },
-                             { step: "03", label: "Review Dossier", text: "Analyze the Risk Quotient and follow the tailored action plan." }
-                           ].map((s, i) => (
-                             <div key={i} className="flex gap-6">
-                                <span className="text-[#1cb5c4] font-black text-xs pt-1">{s.step}</span>
-                                <div>
-                                   <h4 className="font-black uppercase text-sm mb-1">{s.label}</h4>
-                                   <p className="text-xs text-zinc-500">{s.text}</p>
-                                </div>
-                             </div>
-                           ))}
-                        </div>
-                     </div>
-                     <div className="flex items-center justify-center">
-                        <Polyhedron className="w-full max-w-sm text-[#1cb5c4] opacity-40 animate-spin-slow" />
-                     </div>
                   </div>
                </div>
             </section>
@@ -314,7 +258,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="w-full lg:w-[400px] space-y-8">
-               {assessment ? (
+               {assessment && (
                  <div className="bg-zinc-900 border border-white/10 p-10 rounded-2xl animate-in zoom-in-95 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><Polyhedron className="w-20 h-20 text-white" /></div>
                     <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 block">Threat Index</span>
@@ -335,10 +279,6 @@ const App: React.FC = () => {
                           </ul>
                        </div>
                     </div>
-                 </div>
-               ) : (
-                 <div className="bg-zinc-900/50 border border-white/5 border-dashed p-10 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
-                    <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Awaiting Live Feed</p>
                  </div>
                )}
                <div className="bg-red-500/5 border border-red-500/10 p-8 rounded-2xl">
@@ -376,10 +316,6 @@ const App: React.FC = () => {
                      <span className="text-[9px] font-black text-zinc-600 uppercase mb-4 block tracking-widest">{a.date}</span>
                      <h3 className="text-xl font-black mb-6 uppercase leading-tight group-hover:text-[#1cb5c4] transition-colors">{a.title}</h3>
                      <p className="text-zinc-500 text-sm leading-relaxed line-clamp-3 mb-8">{a.excerpt}</p>
-                     <div className="flex items-center gap-2 text-[#1cb5c4] text-[10px] font-black uppercase tracking-widest">
-                        <span>View Analysis</span>
-                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                     </div>
                   </div>
                 )) : (
                   Array.from({length: 6}).map((_, i) => (
@@ -391,56 +327,34 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Emergency Modal */}
       {showReportModal && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="max-w-2xl w-full bg-zinc-900 border border-white/10 p-12 md:p-16 rounded-3xl relative overflow-hidden shadow-[0_0_100px_rgba(239,68,68,0.1)]">
-             <div className="absolute top-0 right-0 p-10 text-7xl font-black text-white/5 select-none uppercase pointer-events-none">SOS</div>
              <button onClick={() => setShowReportModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
              <h3 className="text-5xl font-black text-white mb-8 uppercase tracking-tighter leading-none">Emergency <br/><span className="text-red-500">Protocol</span></h3>
-             <p className="text-zinc-400 text-lg mb-12 leading-relaxed">If you have shared bank details or sensitive data, follow these steps immediately.</p>
-             
-             <div className="grid md:grid-cols-2 gap-6">
-                <div className="p-6 bg-white/5 rounded-xl border border-white/10">
-                   <h4 className="font-black uppercase text-xs text-[#1cb5c4] mb-3">Step 01</h4>
-                   <p className="text-xs text-zinc-400">Lock your bank accounts via the official mobile app or customer care.</p>
-                </div>
-                <div className="p-6 bg-white/5 rounded-xl border border-white/10">
-                   <h4 className="font-black uppercase text-xs text-[#1cb5c4] mb-3">Step 02</h4>
-                   <p className="text-xs text-zinc-400">Report the fraud within the Golden Hour (2 hours) on the portal below.</p>
-                </div>
-             </div>
-
              <IndiaEmergencySection />
-             
-             <div className="mt-12 text-center">
-                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Identity: Secure Node #7741</p>
-             </div>
           </div>
         </div>
       )}
 
-      {/* Footer */}
       <footer className="mt-40 border-t border-white/5 py-24 px-8 bg-black">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 text-[10px] font-black uppercase tracking-widest text-zinc-500">
            <div className="space-y-6">
               <div className="flex items-center gap-3">
                  <div className="bg-zinc-800 p-2 text-xs font-black rounded-sm">NP</div>
                  <span className="text-xs font-black uppercase tracking-[0.4em] text-white">No-Phishing</span>
               </div>
-              <p className="text-xs text-zinc-600 leading-relaxed max-w-xs uppercase font-bold tracking-tighter">
-                Securing the future of digital interaction through advanced neural reasoning.
-              </p>
+              <p className="max-w-xs text-zinc-600">Securing the future of digital interaction through advanced neural reasoning.</p>
            </div>
            <div className="flex flex-col md:items-end justify-center space-y-4">
-              <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className="flex gap-8">
                  <button onClick={() => navigateTo(Page.Home)} className="hover:text-white transition-colors">Terminal</button>
                  <button onClick={() => navigateTo(Page.Detect)} className="hover:text-white transition-colors">Scanner</button>
                  <button onClick={() => navigateTo(Page.Blog)} className="hover:text-white transition-colors">Advisories</button>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.6em] text-zinc-800">NO-PHISHING // 2026</span>
+              <span className="text-zinc-800 tracking-[0.6em]">NO-PHISHING // 2026</span>
            </div>
         </div>
       </footer>
