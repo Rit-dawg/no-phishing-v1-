@@ -169,9 +169,9 @@ const App: React.FC = () => {
                         <span className="text-[10px] font-mono text-[#1cb5c4]">ANALYSIS_V2.0.4</span>
                       </div>
                       <div className="space-y-4 font-mono text-[11px] text-[#1cb5c4]/60">
-                        <p className="flex justify-between"><span>> SCANNING_HEX_ADJUST...</span><span className="text-white">OK</span></p>
-                        <p className="flex justify-between"><span>> NLP_SENTIMENT_CORE...</span><span className="text-white">ACTIVE</span></p>
-                        <p className="flex justify-between"><span>> PHISHING_VECTOR_MAP...</span><span className="text-white">12.4k TPS</span></p>
+                        <p className="flex justify-between"><span>{">"} SCANNING_HEX_ADJUST...</span><span className="text-white">OK</span></p>
+                        <p className="flex justify-between"><span>{">"} NLP_SENTIMENT_CORE...</span><span className="text-white">ACTIVE</span></p>
+                        <p className="flex justify-between"><span>{">"} PHISHING_VECTOR_MAP...</span><span className="text-white">12.4k TPS</span></p>
                         <div className="h-px bg-white/10 my-4"></div>
                         <div className="grid grid-cols-6 gap-2 opacity-40">
                           {Array.from({length: 18}).map((_, i) => <div key={i} className="h-8 bg-[#1cb5c4]/20 rounded-sm"></div>)}
