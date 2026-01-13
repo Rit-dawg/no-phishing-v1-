@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   base: './',
   plugins: [react()],
@@ -12,11 +13,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    target: 'esnext',
+    minify: 'esbuild',
     rollupOptions: {
-      external: ['fsevents'],
+      // Ensure we don't try to bundle Node.js internals
+      external: [],
     }
   },
+  // Prevent Vite from trying to optimize or resolve Node-only packages during dev/build
   optimizeDeps: {
-    exclude: ['fsevents']
+    include: ['react', 'react-dom', '@google/genai']
   }
 });
