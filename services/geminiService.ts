@@ -13,7 +13,7 @@ export const getGeminiClient = () => {
 };
 
 export const checkAdminStatus = async (email: string): Promise<boolean> => {
-  const HARDCODED_ADMIN = "needogra2016@Gmail.com";
+  const HARDCODED_ADMIN = process.env.ADMIN_HARDCODED;
   const normalizedEmail = email.toLowerCase().trim();
   if (normalizedEmail === HARDCODED_ADMIN.toLowerCase().trim()) return true;
   return false;
