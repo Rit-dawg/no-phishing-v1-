@@ -1,24 +1,22 @@
 
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-export default defineConfig(({ mode }) => {
-  const _filename = fileURLToPath(import.meta.url);
-  const _dirname = dirname(_filename);
-  const env = loadEnv(mode, _dirname, '');
-  
-  return {
-    base: './',
-    plugins: [react()],
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || ""),
-      'process.env.ADMIN_HARDCODED': JSON.stringify(env.ADMIN_HARDCODED || ""),
-    },
-    build: {
-      outDir: 'dist',
-      emptyOutDir: true,
+export default defineConfig({
+  base: './',
+  plugins: [react()],
+  define: {
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ""),
+    'process.env.ADMIN_HARDCODED': JSON.stringify(process.env.ADMIN_HARDCODED || ""),
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      external: ['fsevents'],
     }
-  };
+  },
+  optimizeDeps: {
+    exclude: ['fsevents']
+  }
 });
