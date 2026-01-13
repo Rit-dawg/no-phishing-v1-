@@ -1,12 +1,13 @@
 
 import { config, fields, collection } from '@keystatic/core';
 
+
 export default config({
   storage: {
-    kind: 'github',
-   repo: {
-     owner: Rit-dawg,
-     name: no-phishing-v1-
+    kind: 'cloud',
+  },
+  cloud: {
+    project: 'no-phishing/no-phishing-cms',
   },
   collections: {
     advisories: collection({
