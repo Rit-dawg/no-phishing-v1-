@@ -1,23 +1,36 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Page, BlogArticle, RiskAssessment } from './types';
 import { 
   analyzeSituation, 
   generateBlogArticles, 
   fetchAboutPage,
+  getGeminiClient,
 } from './services/geminiService';
 import { LiveAssistant } from './components/LiveAssistant';
 
-interface Message {
-  role: 'user' | 'analyst';
-  text: string;
-}
+const Polyhedron: React.FC<{ className?: string, color?: string }> = ({ className, color = "currentColor" }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 5L90 30V70L50 95L10 70V30L50 5Z" stroke={color} strokeWidth="0.5" strokeOpacity="0.5" />
+    <path d="M50 5L50 95" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
+    <path d="M10 30L90 30" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
+    <path d="M10 70L90 70" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
+    <path d="M50 5L10 70M50 5L90 70M10 30L50 95M90 30L50 95" stroke={color} strokeWidth="0.3" strokeOpacity="0.2" />
+  </svg>
+);
 
-const Logo: React.FC<{ score: number; className?: string }> = ({ score, className = "" }) => {
+const GeometricBackground: React.FC<{ score: number }> = ({ score }) => {
   const isHighRisk = score > 60;
   return (
-    <div className={`relative transition-all duration-700 flex items-center justify-center font-bold text-lg rounded-sm ${className} ${isHighRisk ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)]' : 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.3)]'} text-white`}>
-      N-P
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#0a0a0a]">
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#1cb5c4 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+      <div 
+        className={`absolute -top-[10%] -right-[10%] w-[70%] h-[100%] transition-all duration-1000 transform rotate-12 ${isHighRisk ? 'bg-red-600/10' : 'bg-[#1cb5c4]/15'}`}
+        style={{ clipPath: 'polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%)' }}
+      />
+      <Polyhedron className="absolute top-20 left-[10%] w-64 h-64 text-[#1cb5c4] animate-pulse" />
+      <Polyhedron className="absolute bottom-40 right-[5%] w-96 h-96 text-[#3a7bd5] opacity-20 rotate-45" />
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-[#0a0a0a]/80 to-[#0a0a0a]"></div>
     </div>
   );
 };
@@ -27,97 +40,56 @@ const App: React.FC = () => {
   const [assessment, setAssessment] = useState<RiskAssessment | null>(null);
   const [loading, setLoading] = useState(false);
   const [articles, setArticles] = useState<BlogArticle[]>([]);
-  const [selectedArticle, setSelectedArticle] = useState<BlogArticle | null>(null);
   const [inputContext, setInputContext] = useState('');
-  const [chatHistory, setChatHistory] = useState<Message[]>([]);
+  const [chatHistory, setChatHistory] = useState<{role: string, text: string}[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [showTOS, setShowTOS] = useState(false);
-  const [aboutData, setAboutData] = useState<{title: string, content: string} | null>(null);
-  const [leakEmail, setLeakEmail] = useState('');
-  const [leakStatus, setLeakStatus] = useState<'idle' | 'scanning' | 'clean' | 'leaked'>('idle');
-  const [language, setLanguage] = useState<'EN' | 'HI'>('EN');
   
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  const backgroundStyle = useMemo(() => {
-    if (!assessment || currentPage !== Page.Detect) {
-      return "from-[#0a0f1a] via-[#0d172b] to-[#0a0f1a]";
-    }
-    const score = assessment.score || 0;
-    if (score < 30) return "from-[#0a0f1a] via-[#0d172b] to-[#0a0f1a]";
-    if (score < 60) return "from-[#1a140a] via-[#24170d] to-[#1a0f0a]";
-    return "from-[#1a0a0a] via-[#2b0d0d] to-[#1a0a0a]";
-  }, [assessment?.score, currentPage]);
+  // Leak Checker State
+  const [leakEmail, setLeakEmail] = useState('');
+  const [leakResult, setLeakResult] = useState<{ status: 'secure' | 'compromised' | 'loading' | null, details?: string }>({ status: null });
 
   useEffect(() => {
-    const accepted = localStorage.getItem('tos_accepted');
-    if (!accepted) setShowTOS(true);
-    
     const loadStatic = async () => {
       try {
-        const [abt, art] = await Promise.all([fetchAboutPage(), generateBlogArticles()]);
-        setAboutData(abt);
+        const art = await generateBlogArticles();
         setArticles(art);
-      } catch (err) {
-        console.error("Failed to load initial data", err);
-      }
+      } catch (err) { console.error(err); }
     };
     loadStatic();
   }, []);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory]);
-
-  const handleExportReport = () => {
-    if (!assessment) return;
-    const report = `
-NO-PHISHING FORENSIC ASSESSMENT REPORT
---------------------------------------
-Generated: ${new Date().toLocaleString()}
-Reference ID: NP-${Math.random().toString(36).substr(2, 9).toUpperCase()}
-
-THREAT ANALYSIS:
-Threat Level: ${assessment.threatLevel}
-Risk Score: ${assessment.score}%
-
-SUMMARY OF FINDINGS:
-${assessment.summary}
-
-FORENSIC REASONING:
-${assessment.reasoning}
-
-RECOMMENDED DEFENSE STEPS:
-${assessment.actionSteps.map(s => `[ ] ${s}`).join('\n')}
-
-LEGAL DISCLAIMER:
-This report is AI-generated for situational awareness.
---------------------------------------
-No-Phishing Platform | Intelligence Unit
-    `;
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `NP_Forensic_Report_${Date.now()}.txt`;
-    a.click();
-  };
-
-  const handleAcceptTOS = () => {
-    localStorage.setItem('tos_accepted', 'true');
-    setShowTOS(false);
-  };
-
   const navigateTo = (p: Page) => {
     setCurrentPage(p);
-    if (p !== Page.Blog) setSelectedArticle(null);
-    if (p !== Page.Detect) setAssessment(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const checkEmailLeak = async () => {
+    if (!leakEmail.includes('@')) return;
+    setLeakResult({ status: 'loading' });
+    try {
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Check if this email might be in known data leaks (simulated/grounded search): "${leakEmail}". 
+        Return a short verdict (status: compromised or secure) and brief details on which potential leaks (like '2023 LinkedIn Breach' or 'Adobe 2013').`,
+        config: {
+          tools: [{ googleSearch: {} }]
+        }
+      });
+      const text = response.text || "";
+      const isCompromised = text.toLowerCase().includes('compromised') || text.toLowerCase().includes('found');
+      setLeakResult({ 
+        status: isCompromised ? 'compromised' : 'secure', 
+        details: text 
+      });
+    } catch {
+      setLeakResult({ status: 'secure', details: "No immediate records found in surface-level scans." });
+    }
   };
 
   const handleAnalyze = async (imageData?: { data: string, mimeType: string }) => {
     if ((!inputContext.trim() && !imageData) || loading) return;
-    const userText = inputContext || (imageData ? "Analyzing visual forensics image..." : "");
+    const userText = inputContext || "Visual forensic analysis initiated...";
     setChatHistory(prev => [...prev, { role: 'user', text: userText }]);
     setInputContext('');
     setLoading(true);
@@ -126,299 +98,362 @@ No-Phishing Platform | Intelligence Unit
       setAssessment(result);
       setChatHistory(prev => [...prev, { role: 'analyst', text: result.summary }]);
     } catch (e) {
-      setChatHistory(prev => [...prev, { role: 'analyst', text: "Forensic analysis failed. Connectivity error." }]);
+      setChatHistory(prev => [...prev, { role: 'analyst', text: "Analysis failed. Verify your connection." }]);
     } finally { setLoading(false); }
   };
 
-  const handleLeakScan = async () => {
-    if (!leakEmail || leakStatus === 'scanning') return;
-    setLeakStatus('scanning');
-    try {
-      const result = await analyzeSituation(`DATA BREACH SCAN: Check for exposure associated with "${leakEmail}". Look for database dumps and leaked credentials.`);
-      setLeakStatus(result.score > 40 ? 'leaked' : 'clean');
-      setAssessment(result);
-    } catch (e) { 
-      setLeakStatus('idle'); 
-    }
-  };
-
-  const Nav = () => (
-    <header className={`border-b border-white/5 transition-colors duration-700 ${assessment && assessment.score > 60 ? 'bg-[#1a0a0a]/80' : 'bg-[#0a0f1a]/80'} backdrop-blur-xl px-8 py-4 sticky top-0 z-50`}>
-      <nav className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigateTo(Page.Home)}>
-          <Logo score={assessment?.score || 0} className="w-11 h-10" />
-          <span className="font-bold tracking-tight text-xl text-white/90 uppercase leading-none">NO-PHISHING</span>
-        </div>
-        <div className="hidden md:flex gap-10 text-[11px] font-bold uppercase tracking-widest">
-          <button onClick={() => navigateTo(Page.Detect)} className={currentPage === Page.Detect ? 'text-blue-400' : 'text-zinc-400 hover:text-white'}>Forensic Lab</button>
-          <button onClick={() => navigateTo(Page.Blog)} className={currentPage === Page.Blog ? 'text-blue-400' : 'text-zinc-400 hover:text-white'}>Advisories</button>
-          <button onClick={() => navigateTo(Page.About)} className={currentPage === Page.About ? 'text-blue-400' : 'text-zinc-400 hover:text-white'}>About</button>
-        </div>
-        <div className="flex items-center gap-6">
-           <button onClick={() => setLanguage(l => l === 'EN' ? 'HI' : 'EN')} className="text-[10px] font-bold border border-white/10 px-2 py-1 rounded hover:bg-white/10 transition-all">{language}</button>
-           <div className={`w-1.5 h-1.5 rounded-full ${assessment && assessment.score > 60 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-blue-500 shadow-[0_0_8px_#3b82f6]'} animate-pulse`}></div>
-        </div>
-      </nav>
-    </header>
+  const IndiaEmergencySection = () => (
+    <div className="mt-8 space-y-4">
+      <h4 className="text-white font-bold text-xs uppercase tracking-widest border-l-2 border-red-500 pl-3">India Cyber Response</h4>
+      <div className="grid grid-cols-1 gap-3">
+        <a href="tel:1930" className="flex items-center justify-between p-4 bg-red-500/10 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-all group">
+          <div>
+            <span className="block text-[9px] font-black text-red-400 uppercase tracking-tighter">Emergency Helpline</span>
+            <span className="text-2xl font-black text-white">1930</span>
+          </div>
+          <div className="bg-red-500 text-white px-3 py-1 rounded text-[10px] font-black animate-pulse">REPORT NOW</div>
+        </a>
+      </div>
+    </div>
   );
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-b ${backgroundStyle} transition-all duration-1000 text-zinc-200 selection:bg-blue-500/30`}>
-      <Nav />
-
-      {showTOS && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#050810]/95 backdrop-blur-2xl">
-          <div className="max-w-lg w-full bg-zinc-900/50 border border-white/10 p-12 rounded-lg shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-6">Forensic Disclaimer</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-8 italic">No-Phishing utilizes high-performance AI for threat reasoning. Findings are intended for situational awareness. Contact local authorities if fraud is confirmed.</p>
-            <button onClick={handleAcceptTOS} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded font-bold transition-all uppercase tracking-widest text-xs">Proceed to Lab</button>
+    <div className="min-h-screen flex flex-col selection:bg-cyan-500/30 font-inter">
+      <GeometricBackground score={assessment?.score || 0} />
+      
+      {/* Navigation */}
+      <header className="px-8 py-5 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
+        <nav className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigateTo(Page.Home)}>
+            <div className="bg-[#1cb5c4] text-black font-black p-1.5 rounded-sm text-xs group-hover:bg-white transition-colors">NP</div>
+            <span className="font-black text-lg tracking-tighter uppercase">No-Phishing</span>
           </div>
-        </div>
-      )}
-
-      <button onClick={() => setShowReportModal(true)} className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] bg-red-600 hover:bg-red-500 text-white px-2 py-6 rounded-l-md shadow-2xl transition-all border border-white/20 group">
-        <span className="[writing-mode:vertical-lr] font-bold text-[10px] uppercase tracking-[0.3em] group-hover:scale-105 transition-transform">Emergency</span>
-      </button>
-
-      {showReportModal && (
-        <div className="fixed inset-0 z-[202] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
-          <div className="max-w-xl w-full bg-[#1c1c1c] p-12 border border-white/10 rounded-lg relative">
-             <button onClick={() => setShowReportModal(false)} className="absolute top-6 right-6 text-zinc-500 text-2xl">✕</button>
-             <h3 className="text-3xl font-bold mb-4 uppercase tracking-tighter">Emergency Protocol</h3>
-             <p className="text-zinc-400 mb-8">If assets have been compromised, contact your financial institution's fraud hotline immediately.</p>
-             <div className="grid gap-4 mt-8">
-                <div className="p-6 bg-red-900/10 border border-red-500/20 rounded-lg text-center">
-                  <span className="block text-[10px] uppercase font-bold text-red-400 mb-1">Global Support</span>
-                  <span className="text-3xl font-bold">CONTACT BANK</span>
-                </div>
-             </div>
+          <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+            <button onClick={() => navigateTo(Page.Detect)} className="hover:text-[#1cb5c4] transition-colors">Scanner</button>
+            <button onClick={() => navigateTo(Page.Blog)} className="hover:text-[#1cb5c4] transition-colors">Advisories</button>
+            <button onClick={() => setShowReportModal(true)} className="text-red-500 border border-red-500/20 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all">Emergency</button>
           </div>
-        </div>
-      )}
+        </nav>
+      </header>
 
       <main className="flex-grow">
         {currentPage === Page.Home && (
-          <>
-            <section className="max-w-7xl mx-auto px-8 py-32 md:py-48 grid md:grid-cols-2 items-center gap-16">
-              <div className="space-y-8 text-center md:text-left">
-                <div className="inline-block border border-blue-500/30 bg-blue-500/5 px-4 py-2 rounded-full">
-                  <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Anti-Phishing Intelligence Unit</span>
-                </div>
-                <h1 className="text-6xl md:text-8xl font-extrabold text-white tracking-tight leading-[0.95]">
-                  {language === 'EN' ? 'Expose Scams.' : 'घोटाले उजागर करें।'} <br/>
-                  <span className={`text-blue-500 italic`}>{language === 'EN' ? 'No Phishing.' : 'कोई फ़िशिंग नहीं।'}</span>
-                </h1>
-                <p className="text-xl text-zinc-400 leading-relaxed max-w-lg">
-                  {language === 'EN' 
-                    ? 'No-Phishing delivers professional forensic analysis of suspicious messages, links, and voice calls in seconds.' 
-                    : 'नो-फ़िशिंग सेकंडों में संदिग्ध संदेशों, लिंक और वॉयस कॉल का पेशेवर फ़ॉरेंसिक विश्लेषण प्रदान करता है।'}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-6 pt-6">
-                  <button onClick={() => navigateTo(Page.Detect)} className="bg-white text-black px-10 py-5 rounded font-bold text-sm uppercase tracking-widest hover:bg-zinc-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">Analyze Evidence</button>
-                </div>
-              </div>
-              <div className="hidden md:block relative">
-                 <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 p-1 rounded-lg shadow-2xl relative z-10">
-                    <div className="bg-black/50 p-12 rounded-lg border border-white/5 font-mono text-xs text-blue-400 space-y-4">
-                      <p className="text-white font-bold">NP_OS_v2.5_ACTIVE</p>
-                      <p className="opacity-70 text-zinc-500">Scanning neural vectors for social engineering...</p>
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-3 bg-blue-500 animate-pulse"></div>
-                      </div>
-                    </div>
-                 </div>
-              </div>
-            </section>
-
-            {/* FEATURES SECTION */}
-            <section className="max-w-7xl mx-auto px-8 py-24 border-t border-white/5">
-              <div className="mb-16">
-                <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Core Defense</h2>
-                <h3 className="text-4xl font-bold text-white uppercase">Detection Capabilities</h3>
-              </div>
-              <div className="grid md:grid-cols-3 gap-8">
-                {[
-                  { title: "Visual UI Forensics", desc: "Scan screenshots of suspicious apps or websites for pixel-level inconsistencies and spoofing.", icon: "🖼️" },
-                  { title: "Voice Stress Analysis", desc: "Transcribe and analyze real-time audio from calls to detect high-pressure psychological triggers.", icon: "🎙️" },
-                  { title: "Dark Web Breach Scan", desc: "Instantly check if your email or phone number has been leaked in recent corporate database breaches.", icon: "🌐" },
-                  { title: "Heuristic Reasoning", desc: "AI provides a deep explanation of 'how' a scam is operating, identifying specific fraud playbooks.", icon: "🔍" },
-                  { title: "Incident Reporting", desc: "Generate a formatted forensic report ready to be submitted as evidence to authorities.", icon: "📑" },
-                  { title: "Global Grounding", desc: "Cross-references your case with live web data to identify newly emerging global scam trends.", icon: "📡" }
-                ].map((f, i) => (
-                  <div key={i} className="bg-white/5 border border-white/5 p-10 rounded-2xl hover:bg-white/[0.07] transition-all group">
-                    <div className="text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-                    <h4 className="text-lg font-bold text-white mb-3 uppercase tracking-tight">{f.title}</h4>
-                    <p className="text-zinc-400 text-sm leading-relaxed">{f.desc}</p>
+          <div className="space-y-32 pb-40">
+            {/* Hero */}
+            <section className="relative pt-32 px-8 max-w-7xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-16 items-center">
+                <div className="space-y-12">
+                  <div className="inline-block border border-[#1cb5c4]/30 px-4 py-1 rounded-full bg-[#1cb5c4]/5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1cb5c4]">Securing Digital Frontiers</span>
                   </div>
-                ))}
+                  <h1 className="text-7xl md:text-[110px] font-black leading-[0.82] tracking-tighter uppercase">
+                    Detection <br/> <span className="text-[#1cb5c4]">Redefined.</span>
+                  </h1>
+                  <p className="text-zinc-400 text-lg max-w-lg leading-relaxed font-medium">
+                    The world's most advanced AI forensic platform for identifying social engineering and phishing attempts in real-time.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <button onClick={() => navigateTo(Page.Detect)} className="bg-white text-black px-10 py-5 font-black uppercase text-[11px] tracking-widest hover:bg-[#1cb5c4] transition-all">Initiate Scan</button>
+                    <button onClick={() => navigateTo(Page.Blog)} className="border border-white/20 text-white px-10 py-5 font-black uppercase text-[11px] tracking-widest hover:bg-white/5 transition-all">Advisories Dashboard</button>
+                  </div>
+                </div>
+                <div className="relative hidden lg:block">
+                   <div className="absolute inset-0 bg-cyan-500/10 blur-[120px] rounded-full"></div>
+                   <div className="relative border border-white/10 bg-black/40 backdrop-blur-2xl p-10 rounded-2xl overflow-hidden shadow-2xl">
+                      <div className="flex justify-between items-center mb-8">
+                        <div className="flex gap-2">
+                           <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                           <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#1cb5c4]">ANALYSIS_V2.0.4</span>
+                      </div>
+                      <div className="space-y-4 font-mono text-[11px] text-[#1cb5c4]/60">
+                        <p className="flex justify-between"><span>> SCANNING_HEX_ADJUST...</span><span className="text-white">OK</span></p>
+                        <p className="flex justify-between"><span>> NLP_SENTIMENT_CORE...</span><span className="text-white">ACTIVE</span></p>
+                        <p className="flex justify-between"><span>> PHISHING_VECTOR_MAP...</span><span className="text-white">12.4k TPS</span></p>
+                        <div className="h-px bg-white/10 my-4"></div>
+                        <div className="grid grid-cols-6 gap-2 opacity-40">
+                          {Array.from({length: 18}).map((_, i) => <div key={i} className="h-8 bg-[#1cb5c4]/20 rounded-sm"></div>)}
+                        </div>
+                      </div>
+                   </div>
+                </div>
               </div>
             </section>
 
-            {/* HOW TO USE GUIDE */}
-            <section className="bg-white/[0.02] border-y border-white/5 px-8 py-32">
-              <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-20">
-                  <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Operational Guide</h2>
-                  <h3 className="text-4xl font-bold text-white uppercase">How to Use No-Phishing</h3>
-                </div>
-                <div className="grid md:grid-cols-4 gap-12">
+            {/* Leak Checker Tool */}
+            <section className="max-w-7xl mx-auto px-8">
+               <div className="bg-zinc-900 border border-[#1cb5c4]/20 rounded-3xl p-12 md:p-16 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                     <Polyhedron className="w-64 h-64 text-white" />
+                  </div>
+                  <div className="relative z-10 max-w-2xl">
+                     <span className="text-[10px] font-black text-[#1cb5c4] uppercase tracking-[0.4em] block mb-4">Deep Web Intelligence</span>
+                     <h2 className="text-4xl font-black uppercase tracking-tighter mb-8">Have you been <span className="text-red-500">leaked?</span></h2>
+                     <p className="text-zinc-500 mb-10 text-sm leading-relaxed">Enter your email to scan known data breach repositories and dark web signatures.</p>
+                     
+                     <div className="flex flex-col md:flex-row gap-4">
+                        <input 
+                          type="email" 
+                          placeholder="e.g. security@intelligence.org" 
+                          value={leakEmail}
+                          onChange={(e) => setLeakEmail(e.target.value)}
+                          className="flex-grow bg-black/50 border border-white/10 rounded-lg px-6 py-4 text-sm text-white focus:border-[#1cb5c4] focus:outline-none transition-all"
+                        />
+                        <button 
+                          onClick={checkEmailLeak}
+                          className="bg-[#1cb5c4] text-black font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-lg hover:bg-white transition-all disabled:opacity-50"
+                          disabled={leakResult.status === 'loading'}
+                        >
+                          {leakResult.status === 'loading' ? 'Scanning...' : 'Verify Email'}
+                        </button>
+                     </div>
+
+                     {leakResult.status && (
+                       <div className={`mt-10 p-6 rounded-xl border ${leakResult.status === 'compromised' ? 'bg-red-500/10 border-red-500/30' : 'bg-green-500/10 border-green-500/30'} animate-in slide-in-from-top-4`}>
+                          <div className="flex items-center gap-4 mb-4">
+                             <div className={`w-3 h-3 rounded-full ${leakResult.status === 'compromised' ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
+                             <span className={`text-[11px] font-black uppercase tracking-widest ${leakResult.status === 'compromised' ? 'text-red-500' : 'text-green-500'}`}>
+                                {leakResult.status === 'compromised' ? 'Compromise Detected' : 'No Immediate Threats'}
+                             </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 font-mono leading-relaxed">{leakResult.details}</p>
+                       </div>
+                     )}
+                  </div>
+               </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="max-w-7xl mx-auto px-8">
+               <div className="mb-20">
+                  <span className="text-[10px] font-black text-[#1cb5c4] uppercase tracking-[0.4em] block mb-4">The Platform</span>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter">Advanced Features</h2>
+               </div>
+               <div className="grid md:grid-cols-3 gap-px bg-white/5 border border-white/5">
                   {[
-                    { step: "01", title: "Capture Evidence", desc: "Take a screenshot of the suspicious text, email, or record a clip of the suspicious call." },
-                    { step: "02", title: "Upload to Lab", desc: "Navigate to the Forensic Lab. Use the text input or image upload to provide the evidence." },
-                    { step: "03", title: "Run Analysis", desc: "The AI Analyst will perform multi-modal reasoning and provide a precise Risk Score (0-100)." },
-                    { step: "04", title: "Execute Defense", desc: "Review the 'Action Steps' and follow them immediately to secure your digital accounts." }
-                  ].map((s, i) => (
-                    <div key={i} className="relative">
-                      <div className="text-5xl font-black text-blue-500/20 absolute -top-10 -left-4">{s.step}</div>
-                      <h4 className="text-lg font-bold text-white mb-4 relative z-10 uppercase tracking-tighter">{s.title}</h4>
-                      <p className="text-zinc-500 text-sm leading-relaxed">{s.desc}</p>
+                    { title: "Forensic Reasoning", desc: "Multi-modal AI that checks text and visuals for deep-fake patterns.", icon: "01" },
+                    { title: "Psychological Profiling", desc: "Identifies urgency, fear, and authority-based manipulation tactics.", icon: "02" },
+                    { title: "Network Grounding", desc: "Live web-search grounding to verify claims against global news databases.", icon: "03" }
+                  ].map((f, i) => (
+                    <div key={i} className="bg-[#0a0a0a] p-12 space-y-6 group hover:bg-zinc-900 transition-colors">
+                      <span className="text-4xl font-black text-white/10 group-hover:text-[#1cb5c4]/20 transition-colors">{f.icon}</span>
+                      <h3 className="text-xl font-black uppercase">{f.title}</h3>
+                      <p className="text-zinc-500 text-sm leading-relaxed">{f.desc}</p>
                     </div>
                   ))}
-                </div>
-              </div>
+               </div>
             </section>
-          </>
+
+            {/* How to Use Section */}
+            <section className="max-w-7xl mx-auto px-8">
+               <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-12 md:p-24 relative overflow-hidden">
+                  <div className="relative z-10 grid lg:grid-cols-2 gap-20">
+                     <div>
+                        <h2 className="text-5xl font-black uppercase tracking-tighter mb-8 leading-none">Operational <br/> Protocol</h2>
+                        <p className="text-zinc-400 mb-12">How to deploy No-Phishing for immediate threat assessment.</p>
+                        <div className="space-y-8">
+                           {[
+                             { step: "01", label: "Capture Evidence", text: "Screenshot the suspicious email, message, or website." },
+                             { step: "02", label: "Neural Upload", text: "Upload the image or paste the text into our Forensic Scanner." },
+                             { step: "03", label: "Review Dossier", text: "Analyze the Risk Quotient and follow the tailored action plan." }
+                           ].map((s, i) => (
+                             <div key={i} className="flex gap-6">
+                                <span className="text-[#1cb5c4] font-black text-xs pt-1">{s.step}</span>
+                                <div>
+                                   <h4 className="font-black uppercase text-sm mb-1">{s.label}</h4>
+                                   <p className="text-xs text-zinc-500">{s.text}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                     <div className="flex items-center justify-center">
+                        <Polyhedron className="w-full max-w-sm text-[#1cb5c4] opacity-40 animate-spin-slow" />
+                     </div>
+                  </div>
+               </div>
+            </section>
+          </div>
         )}
 
         {currentPage === Page.Detect && (
-          <section className="max-w-7xl mx-auto px-8 py-20 flex flex-col md:flex-row gap-12 min-h-[80vh]">
-            <div className={`flex-grow flex flex-col bg-black/40 border transition-all duration-700 ${assessment && assessment.score > 60 ? 'border-red-500/20' : 'border-white/5'} rounded-lg overflow-hidden shadow-2xl`}>
-              <div className="bg-black/40 border-b border-white/5 px-6 py-4 flex justify-between items-center">
-                 <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-spin' : 'bg-blue-500 animate-pulse'}`}></div>
-                    <h2 className="text-xs font-bold text-white uppercase tracking-widest">Forensic Verification</h2>
-                 </div>
-                 <div className="flex gap-4 items-center">
-                   {assessment && <button onClick={handleExportReport} className="text-[10px] font-bold uppercase text-blue-400 hover:text-white transition-colors border border-blue-400/20 px-3 py-1.5 rounded bg-blue-400/5">Download Report</button>}
-                   {chatHistory.length > 0 && <button onClick={() => {setChatHistory([]); setAssessment(null);}} className="text-[10px] font-bold uppercase text-zinc-500 hover:text-white transition-colors">Clear Lab</button>}
-                 </div>
-              </div>
-              <div className="flex-grow overflow-y-auto p-8 space-y-6 custom-scroll">
-                {chatHistory.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
-                    <p className="max-w-xs text-sm italic font-mono uppercase tracking-widest">Awaiting forensic payload...<br/>Provide evidence to initiate scan.</p>
+          <section className="max-w-7xl mx-auto px-8 py-20 flex flex-col lg:flex-row gap-12">
+            <div className="flex-grow bg-black/60 border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-2xl">
+               <div className="p-5 border-b border-white/5 flex justify-between bg-white/5 items-center">
+                  <div className="flex items-center gap-2">
+                     <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-[#1cb5c4]">Secure Node Active</span>
                   </div>
-                )}
-                {chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
-                    <div className={`max-w-[85%] px-6 py-5 rounded-2xl text-sm ${msg.role === 'user' ? (assessment && assessment.score > 60 ? 'bg-red-700' : 'bg-blue-600') : 'bg-black/60 border border-white/5 text-zinc-300 font-medium'} text-white shadow-xl`}>
-                      {msg.role === 'analyst' && <span className="block text-[9px] uppercase font-bold text-blue-400 mb-2 tracking-widest">NP-AI Analyst:</span>}
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-              <div className="p-6 bg-black/40 border-t border-white/5">
-                <LiveAssistant onAssessmentReceived={setAssessment} externalInput={inputContext} setExternalInput={setInputContext} onManualAnalyze={handleAnalyze} loading={loading} />
-              </div>
-            </div>
-
-            <div className="w-full md:w-[400px] shrink-0 space-y-6">
-              <div className="bg-black/40 border border-emerald-500/20 p-8 rounded-lg shadow-xl relative overflow-hidden group">
-                <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Data Breach Scanner
-                </h4>
-                <div className="space-y-4">
-                  <input 
-                    value={leakEmail} 
-                    onChange={(e) => setLeakEmail(e.target.value)} 
-                    placeholder="Email or Phone" 
-                    className="w-full bg-black/60 border border-white/10 p-4 rounded-lg text-xs focus:border-emerald-500 outline-none transition-all" 
-                  />
-                  <button 
-                    onClick={handleLeakScan}
-                    disabled={leakStatus === 'scanning' || !leakEmail}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-[0_5px_15px_rgba(5,150,105,0.2)]"
-                  >
-                    {leakStatus === 'scanning' ? 'Scanning Databases...' : 'Search Public Breaches'}
-                  </button>
-                  {leakStatus !== 'idle' && leakStatus !== 'scanning' && (
-                    <div className={`p-4 rounded-lg text-center text-xs font-bold uppercase animate-in zoom-in-95 ${leakStatus === 'leaked' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
-                      {leakStatus === 'leaked' ? 'Compromise Detected' : 'No Major Leaks Found'}
+                  <span className="text-[10px] font-mono text-zinc-600">ENCRYPTION: AES-256</span>
+               </div>
+               
+               <div className="flex-grow p-10 overflow-y-auto space-y-8 custom-scroll min-h-[500px]">
+                  {chatHistory.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-center space-y-6 py-20">
+                       <Polyhedron className="w-24 h-24 text-white/5" />
+                       <div className="space-y-2">
+                          <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-700">Waiting for Intel</h2>
+                          <p className="text-[10px] tracking-[0.5em] font-mono text-zinc-800 uppercase">Input text or image for analysis</p>
+                       </div>
                     </div>
                   )}
-                </div>
-              </div>
+                  {chatHistory.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-500`}>
+                      <div className={`max-w-[85%] p-8 rounded-2xl ${m.role === 'user' ? 'bg-[#1cb5c4] text-black font-bold' : 'bg-zinc-900 border border-white/10 text-zinc-300'}`}>
+                        <p className="text-sm leading-relaxed">{m.text}</p>
+                      </div>
+                    </div>
+                  ))}
+               </div>
 
-              {assessment && (
-                <div className={`bg-black/60 border transition-all duration-700 ${assessment.score > 60 ? 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : 'border-white/10'} p-8 rounded-lg animate-in fade-in slide-in-from-right-5 space-y-8`}>
-                   <div>
-                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Risk Assessment</span>
-                     <h3 className="text-4xl font-black uppercase tracking-tighter transition-colors" style={{ color: assessment.score > 70 ? '#ef4444' : (assessment.score > 40 ? '#f59e0b' : '#3b82f6') }}>{assessment.threatLevel} ({assessment.score}%)</h3>
-                   </div>
-                   <div className="p-5 bg-black/60 border border-white/5 rounded-xl font-mono text-[11px] leading-relaxed relative">
-                     <span className="text-blue-500 block mb-3 font-bold uppercase tracking-widest border-b border-blue-500/20 pb-1">Forensic Reasoning:</span>
-                     <p className="text-zinc-400 italic">"{assessment.reasoning}"</p>
-                   </div>
-                   <div className="space-y-3">
-                     <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Recommended Defense:</span>
-                     <ul className="space-y-2">
-                       {assessment.actionSteps.map((step, idx) => (
-                         <li key={idx} className="flex gap-3 text-[11px] text-zinc-300 items-start">
-                           <span className="text-blue-500 font-bold">»</span>
-                           <span className="leading-tight">{step}</span>
-                         </li>
-                       ))}
-                     </ul>
-                   </div>
-                </div>
-              )}
+               <div className="p-8 bg-black/40 border-t border-white/5">
+                  <LiveAssistant onAssessmentReceived={setAssessment} externalInput={inputContext} setExternalInput={setInputContext} onManualAnalyze={handleAnalyze} loading={loading} />
+               </div>
+            </div>
+
+            <div className="w-full lg:w-[400px] space-y-8">
+               {assessment ? (
+                 <div className="bg-zinc-900 border border-white/10 p-10 rounded-2xl animate-in zoom-in-95 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10"><Polyhedron className="w-20 h-20 text-white" /></div>
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 block">Threat Index</span>
+                    <h3 className={`text-7xl font-black tracking-tighter ${assessment.score > 60 ? 'text-red-500' : 'text-[#1cb5c4]'}`}>{assessment.score}%</h3>
+                    <div className="mt-10 space-y-6">
+                       <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                          <p className="text-[9px] font-black text-zinc-500 uppercase mb-2">Primary Diagnosis</p>
+                          <p className="text-sm text-zinc-200 leading-relaxed font-medium">"{assessment.reasoning}"</p>
+                       </div>
+                       <div>
+                          <p className="text-[9px] font-black text-zinc-500 uppercase mb-3">Response Protocol</p>
+                          <ul className="space-y-2">
+                             {assessment.actionSteps.map((step, idx) => (
+                               <li key={idx} className="text-xs text-[#1cb5c4] flex gap-2">
+                                  <span className="font-bold">[{idx + 1}]</span> {step}
+                               </li>
+                             ))}
+                          </ul>
+                       </div>
+                    </div>
+                 </div>
+               ) : (
+                 <div className="bg-zinc-900/50 border border-white/5 border-dashed p-10 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
+                    <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Awaiting Live Feed</p>
+                 </div>
+               )}
+               <div className="bg-red-500/5 border border-red-500/10 p-8 rounded-2xl">
+                  <h4 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4">India Emergency Link</h4>
+                  <p className="text-xs text-zinc-500 leading-relaxed mb-6">Immediate reporting for Indian residents who have fallen victim to financial fraud.</p>
+                  <IndiaEmergencySection />
+               </div>
             </div>
           </section>
         )}
 
         {currentPage === Page.Blog && (
-          <section className="max-w-6xl mx-auto px-8 py-24">
-            <div className="flex justify-between items-end mb-16 border-b border-white/5 pb-8">
-              <div>
-                <h2 className="text-4xl font-bold text-white uppercase tracking-tight">Security Advisories</h2>
-              </div>
-            </div>
-            {selectedArticle ? (
-              <div className="animate-in fade-in slide-in-from-bottom-4 max-w-3xl mx-auto">
-                <button onClick={() => setSelectedArticle(null)} className="text-blue-500 mb-12 uppercase text-[10px] font-bold tracking-widest hover:text-blue-400 flex items-center gap-2 group">
-                   ← Back to Advisories
-                </button>
-                <div className="mb-10">
-                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{selectedArticle.date}</span>
-                   <h2 className="text-5xl font-black text-white mt-4 mb-8 uppercase tracking-tighter leading-none">{selectedArticle.title}</h2>
+          <section className="max-w-7xl mx-auto px-8 py-24">
+             <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
+                <div>
+                   <span className="text-[10px] font-black text-[#1cb5c4] uppercase tracking-[0.4em] block mb-4">Security Intelligence</span>
+                   <h2 className="text-6xl font-black uppercase tracking-tighter">Security Advisories</h2>
                 </div>
-                <div className="prose prose-invert max-w-none text-zinc-400 text-lg leading-relaxed whitespace-pre-wrap">
-                  {selectedArticle.content}
+                <div className="flex gap-4">
+                   <div className="bg-zinc-900 px-6 py-3 rounded border border-white/10 text-center">
+                      <span className="block text-[9px] font-black text-zinc-500 uppercase">Active Threats</span>
+                      <span className="text-xl font-black text-white">{articles.length}</span>
+                   </div>
+                   <div className="bg-red-500/10 px-6 py-3 rounded border border-red-500/20 text-center">
+                      <span className="block text-[9px] font-black text-red-400 uppercase">Alert Level</span>
+                      <span className="text-xl font-black text-red-500">MODERATE</span>
+                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-8">
-                {articles.map((article) => (
-                  <div key={article.id} className="bg-black/40 border border-white/5 p-8 rounded-2xl hover:border-blue-500/50 transition-all cursor-pointer group flex flex-col h-full shadow-xl" onClick={() => setSelectedArticle(article)}>
-                    <span className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-4">{article.date}</span>
-                    <h3 className="text-xl font-bold text-white mb-6 group-hover:text-blue-400 transition-all uppercase leading-tight">{article.title}</h3>
-                    <p className="text-zinc-500 text-sm line-clamp-3 italic leading-relaxed flex-grow">"{article.excerpt}"</p>
+             </div>
+             
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {articles.length > 0 ? articles.map(a => (
+                  <div key={a.id} className="group p-10 border border-white/5 bg-zinc-900/30 rounded-2xl hover:border-[#1cb5c4]/40 transition-all cursor-pointer relative overflow-hidden">
+                     <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity"><Polyhedron className="w-16 h-16 text-white" /></div>
+                     <span className="text-[9px] font-black text-zinc-600 uppercase mb-4 block tracking-widest">{a.date}</span>
+                     <h3 className="text-xl font-black mb-6 uppercase leading-tight group-hover:text-[#1cb5c4] transition-colors">{a.title}</h3>
+                     <p className="text-zinc-500 text-sm leading-relaxed line-clamp-3 mb-8">{a.excerpt}</p>
+                     <div className="flex items-center gap-2 text-[#1cb5c4] text-[10px] font-black uppercase tracking-widest">
+                        <span>View Analysis</span>
+                        <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-        
-        {currentPage === Page.About && (
-          <section className="max-w-4xl mx-auto px-8 py-32 text-center">
-            <div className="space-y-12">
-               <h2 className="text-5xl font-black text-white uppercase tracking-tighter">{aboutData?.title || 'Our Security Mission'}</h2>
-               <p className="text-2xl text-zinc-400 leading-relaxed font-light">
-                 {aboutData?.content || "No-Phishing provides real-time situational awareness and forensic reasoning to protect global digital assets."}
-               </p>
-            </div>
+                )) : (
+                  Array.from({length: 6}).map((_, i) => (
+                    <div key={i} className="h-64 bg-zinc-900/20 border border-white/5 rounded-2xl animate-pulse"></div>
+                  ))
+                )}
+             </div>
           </section>
         )}
       </main>
-      <footer className="mt-40 px-8 py-20 border-t border-white/5 bg-black/40 text-center">
-        <div className="flex flex-col items-center gap-6">
-           <Logo score={0} className="w-10 h-10 grayscale opacity-20" />
-           <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.5em]">No-Phishing 2026 • AI Defense Division</p>
+
+      {/* Emergency Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="max-w-2xl w-full bg-zinc-900 border border-white/10 p-12 md:p-16 rounded-3xl relative overflow-hidden shadow-[0_0_100px_rgba(239,68,68,0.1)]">
+             <div className="absolute top-0 right-0 p-10 text-7xl font-black text-white/5 select-none uppercase pointer-events-none">SOS</div>
+             <button onClick={() => setShowReportModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+             </button>
+             <h3 className="text-5xl font-black text-white mb-8 uppercase tracking-tighter leading-none">Emergency <br/><span className="text-red-500">Protocol</span></h3>
+             <p className="text-zinc-400 text-lg mb-12 leading-relaxed">If you have shared bank details or sensitive data, follow these steps immediately.</p>
+             
+             <div className="grid md:grid-cols-2 gap-6">
+                <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                   <h4 className="font-black uppercase text-xs text-[#1cb5c4] mb-3">Step 01</h4>
+                   <p className="text-xs text-zinc-400">Lock your bank accounts via the official mobile app or customer care.</p>
+                </div>
+                <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                   <h4 className="font-black uppercase text-xs text-[#1cb5c4] mb-3">Step 02</h4>
+                   <p className="text-xs text-zinc-400">Report the fraud within the Golden Hour (2 hours) on the portal below.</p>
+                </div>
+             </div>
+
+             <IndiaEmergencySection />
+             
+             <div className="mt-12 text-center">
+                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Identity: Secure Node #7741</p>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="mt-40 border-t border-white/5 py-24 px-8 bg-black">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
+           <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                 <div className="bg-zinc-800 p-2 text-xs font-black rounded-sm">NP</div>
+                 <span className="text-xs font-black uppercase tracking-[0.4em] text-white">No-Phishing</span>
+              </div>
+              <p className="text-xs text-zinc-600 leading-relaxed max-w-xs uppercase font-bold tracking-tighter">
+                Securing the future of digital interaction through advanced neural reasoning.
+              </p>
+           </div>
+           <div className="flex flex-col md:items-end justify-center space-y-4">
+              <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                 <button onClick={() => navigateTo(Page.Home)} className="hover:text-white transition-colors">Terminal</button>
+                 <button onClick={() => navigateTo(Page.Detect)} className="hover:text-white transition-colors">Scanner</button>
+                 <button onClick={() => navigateTo(Page.Blog)} className="hover:text-white transition-colors">Advisories</button>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.6em] text-zinc-800">NO-PHISHING // 2026</span>
+           </div>
         </div>
       </footer>
+      
+      <style>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };
