@@ -1,24 +1,40 @@
 
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+// This file is strictly for Keystatic and should not be imported by the main app bundle.
+// @ts-ignore
+import { config, fields, collection } from 'https://esm.sh/@keystatic/core@0.5.48';
 
-export default defineConfig(({ mode }) => {
-  const _filename = fileURLToPath(import.meta.url);
-  const _dirname = dirname(_filename);
-  const env = loadEnv(mode, _dirname, '');
-  
-  return {
-    base: './',
-    plugins: [react()],
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || ""),
-      'process.env.ADMIN_HARDCODED': JSON.stringify(env.ADMIN_HARDCODED || ""),
-    },
-    build: {
-      outDir: 'dist',
-      emptyOutDir: true,
-    }
-  };
+export default config({
+  storage: { kind: 'cloud' },
+  cloud: { project: 'no-phishing/no-phishing-cms' },
+  collections: {
+    advisories: collection({
+      label: 'Security Advisories',
+      slugField: 'title',
+      path: 'content/advisories/*',
+      format: { contentField: 'content' },
+      schema: {
+        title: fields.slug({ name: { label: 'Title' } }),
+        excerpt: fields.text({ label: 'Excerpt', multiline: true }),
+        date: fields.date({ label: 'Published Date' }),
+        author: fields.text({ label: 'Author' }),
+        severity: fields.select({
+          label: 'Severity',
+          options: [
+            { label: 'Low', value: 'low' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'High', value: 'high' },
+            { label: 'Critical', value: 'critical' },
+          ],
+          defaultValue: 'medium',
+        }),
+        content: fields.document({
+          label: 'Content',
+          formatting: true,
+          dividers: true,
+          links: true,
+          images: true,
+        }),
+      },
+    }),
+  },
 });
