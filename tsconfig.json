@@ -15,7 +15,12 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "path": ["./node_modules/path-browserify"],
+    },
   },
   "include": ["**/*.ts", "**/*.tsx", "global.d.ts", "vite.config.ts"],
+  "exclude": ["node_modules"],
 }
