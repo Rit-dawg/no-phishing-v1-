@@ -1,12 +1,19 @@
 import { config, fields, collection } from "@keystatic/core";
 
+const isProd = process.env.NODE_ENV === "production";
+
 export default config({
-  storage: {
-    kind: "cloud",
-  },
-  cloud: {
-    project: "no-phishing/no-phishing-v1-",
-  },
+  storage: isProd
+    ? {
+        kind: "github",
+        repo: {
+          owner: "Rit-dawg", // Change this to your GitHub username
+          name: "no-phishing-v1-", // Change this to your repository name
+        },
+      }
+    : {
+        kind: "local",
+      },
   collections: {
     advisories: collection({
       label: "Security Advisories",
