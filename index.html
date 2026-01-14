@@ -10,7 +10,8 @@
             content="Protect yourself from online fraud using Google Gemini AI Multi-modal reasoning."
         />
         <meta name="theme-color" content="#0a0a0a" />
-        <link rel="manifest" href="/manifest.json" />
+        <!-- Use relative path for manifest -->
+        <link rel="manifest" href="./manifest.json" />
 
         <script src="https://cdn.tailwindcss.com"></script>
         <link
@@ -76,6 +77,7 @@
     <body class="min-h-screen">
         <div class="grid-overlay" aria-hidden="true"></div>
         <div id="root"></div>
-        <script type="module" src="/index.tsx"></script>
+        <!-- Entry point should be relative to work with base: './' -->
+        <script type="module" src="./index.tsx"></script>
     </body>
 </html>

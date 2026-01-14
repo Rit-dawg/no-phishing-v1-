@@ -3,9 +3,11 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 export default defineConfig({
-  base: "/",
+  // Using relative base to ensure assets load correctly on GitHub Pages subfolders
+  base: "./",
   plugins: [react()],
   define: {
+    // Stringify variables so they are replaced as literals in the bundled code
     "process.env.API_KEY": JSON.stringify(process.env.API_KEY || ""),
     "process.env.ADMIN_HARDCODED": JSON.stringify(
       process.env.ADMIN_HARDCODED || "",

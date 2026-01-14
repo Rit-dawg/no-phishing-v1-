@@ -32,10 +32,7 @@ declare global {
   interface Window {
     AudioContext: typeof AudioContext;
     webkitAudioContext: typeof AudioContext;
-    /**
-     * Use the interface defined above.
-     * Fixed: Removed modifiers and ensured identical declaration structure to prevent mismatch.
-     */
+    // Fixed: Standardized the aistudio property declaration to avoid modifier mismatch errors.
     aistudio: AIStudio;
   }
 }
