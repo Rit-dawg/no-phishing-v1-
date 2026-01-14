@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback } from "react";
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { RiskAssessment } from "../types";
 
-// Manual encode implementation as per guidelines
 function encode(bytes: Uint8Array) {
   let binary = "";
   const len = bytes.byteLength;
@@ -45,7 +44,7 @@ export const LiveAssistant: React.FC<Props> = ({
       sessionRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
   }, []);
@@ -75,11 +74,6 @@ export const LiveAssistant: React.FC<Props> = ({
       )({ sampleRate: 16000 });
       audioContextRef.current = inputCtx;
 
-      // Handle Autoplay policy
-      if (inputCtx.state === "suspended") {
-        await inputCtx.resume();
-      }
-
       const sessionPromise = ai.live.connect({
         model: "gemini-2.5-flash-native-audio-preview-12-2025",
         callbacks: {
@@ -97,15 +91,16 @@ export const LiveAssistant: React.FC<Props> = ({
                 int16[i] = inputData[i] * 32768;
               }
 
-              // Rely solely on sessionPromise resolves
-              sessionPromise.then((session) => {
-                session.sendRealtimeInput({
-                  media: {
-                    data: encode(new Uint8Array(int16.buffer)),
-                    mimeType: "audio/pcm;rate=16000",
-                  },
-                });
-              });
+              sessionPromise
+                .then((session) => {
+                  session.sendRealtimeInput({
+                    media: {
+                      data: encode(new Uint8Array(int16.buffer)),
+                      mimeType: "audio/pcm;rate=16000",
+                    },
+                  });
+                })
+                .catch(() => {});
             };
             source.connect(scriptProcessor);
             scriptProcessor.connect(inputCtx.destination);
@@ -155,7 +150,7 @@ export const LiveAssistant: React.FC<Props> = ({
   return (
     <div className="flex flex-col gap-2">
       {pendingImage && (
-        <div className="flex items-center gap-2 p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex items-center gap-2 p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
           <div className="w-10 h-10 rounded bg-black/40 overflow-hidden">
             <img
               src={`data:${pendingImage.mimeType};base64,${pendingImage.data}`}
@@ -185,10 +180,7 @@ export const LiveAssistant: React.FC<Props> = ({
         />
 
         <button
-          // Fixed truthiness check on void return by separating the logic
-          onClick={() => {
-            if (fileInputRef.current) fileInputRef.current.click();
-          }}
+          onClick={() => fileInputRef.current?.click()}
           className="p-3 text-zinc-500 hover:text-cyan-400 transition-all"
         >
           <svg
@@ -236,11 +228,7 @@ export const LiveAssistant: React.FC<Props> = ({
           value={externalInput}
           onChange={(e) => setExternalInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            isActive
-              ? "Listening..."
-              : "Describe the situation or attach an image..."
-          }
+          placeholder={isActive ? "Listening..." : "Describe the situation..."}
           className="flex-grow bg-transparent border-none py-3 px-1 text-sm text-zinc-200 outline-none resize-none max-h-32 min-h-[44px] custom-scroll"
           rows={1}
         />

@@ -141,18 +141,18 @@ const App: React.FC = () => {
       const ai = getGeminiClient();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Determine if email "${leakEmail}" is compromised. Return JSON: status (compromised/secure) and details.`,
+        contents: `Is email "${leakEmail}" in any public scam or breach database? Reply as JSON with fields: status (compromised/secure) and details string.`,
         config: { tools: [{ googleSearch: {} }] },
       });
       const data = JSON.parse(response.text || "{}");
       setLeakResult({
         status: data.status === "compromised" ? "compromised" : "secure",
-        details: data.details || response.text,
+        details: data.details || "Search complete.",
       });
     } catch {
       setLeakResult({
         status: "secure",
-        details: "No public breach records found in immediate search.",
+        details: "Database unreachable or no leak found.",
       });
     }
   };
@@ -167,40 +167,19 @@ const App: React.FC = () => {
     setInputContext("");
     setLoading(true);
     try {
-      const ai = getGeminiClient();
-      const parts: any[] = [
-        {
-          text: `Analyze for scams: "${userText}". Provide score (0-100), threatLevel, summary, reasoning, actionSteps as JSON.`,
-        },
-      ];
-      if (imageData) parts.push({ inlineData: imageData });
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: { parts },
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-        },
-      });
-
-      const result = JSON.parse(response.text || "{}") as RiskAssessment;
-      const links =
-        response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-
+      const result = await analyzeSituation(userText, imageData);
       setAssessment(result);
       setChatHistory((prev) => [
         ...prev,
-        {
-          role: "analyst",
-          text: result.summary,
-          links: links.map((c: any) => c.web).filter(Boolean),
-        },
+        { role: "analyst", text: result.summary },
       ]);
     } catch (e) {
       setChatHistory((prev) => [
         ...prev,
-        { role: "analyst", text: "Forensic link broken. Please retry." },
+        {
+          role: "analyst",
+          text: "Error in forensic engine. Verify connectivity.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -388,7 +367,7 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-[#1cb5c4]">
-                    Encrypted Session
+                    Forensic Terminal
                   </span>
                 </div>
               </div>
@@ -411,23 +390,6 @@ const App: React.FC = () => {
                       className={`max-w-[90%] p-6 lg:p-8 rounded-2xl ${m.role === "user" ? "bg-[#1cb5c4] text-black font-bold" : "bg-zinc-900 border border-white/10 text-zinc-300"}`}
                     >
                       <p className="text-sm leading-relaxed">{m.text}</p>
-                      {m.links && m.links.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                          <p className="text-[10px] uppercase font-black text-zinc-500 tracking-widest">
-                            Grounding Sources
-                          </p>
-                          {m.links.map((link: any, idx: number) => (
-                            <a
-                              key={idx}
-                              href={link.uri}
-                              target="_blank"
-                              className="block text-[10px] text-cyan-400 hover:underline truncate"
-                            >
-                              [{idx + 1}] {link.title || link.uri}
-                            </a>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -528,7 +490,7 @@ const App: React.FC = () => {
               </span>
             </div>
             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-              2026 Rit-dawg
+              © 2024 Forensic Security Intelligence • Global Defense
             </p>
           </div>
           <div className="flex justify-center md:justify-end gap-12 text-[10px] font-black uppercase tracking-widest text-zinc-500">

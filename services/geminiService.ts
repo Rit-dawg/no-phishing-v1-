@@ -4,8 +4,11 @@ import { BlogArticle } from "../types";
 export const getGeminiClient = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API_KEY is not defined in the environment.");
+    throw new Error(
+      "API_KEY is not defined. Ensure it is set in your environment variables.",
+    );
   }
+  // Correct initialization as per guidelines: new GoogleGenAI({ apiKey: string })
   return new GoogleGenAI({ apiKey });
 };
 
@@ -48,7 +51,6 @@ export const generateBlogArticles = async (): Promise<BlogArticle[]> => {
         },
       },
     });
-    // Use .text property directly
     return JSON.parse(response.text || "[]");
   } catch (err) {
     console.error("Error generating articles:", err);
@@ -64,8 +66,7 @@ export const analyzeSituation = async (
   const parts: any[] = [
     {
       text: `High-fidelity forensic analysis required for: "${context}".
-  If image provided, perform Visual Forensics. Use Google Search to verify any entities, phone numbers, or URLs mentioned.
-  Structure response as JSON: score (0-100), threatLevel, summary, reasoning, actionSteps.`,
+  Provide a score (0-100) where 100 is a definite scam, threatLevel, summary, reasoning, and actionSteps.`,
     },
   ];
 
@@ -103,6 +104,5 @@ export const analyzeSituation = async (
       },
     },
   });
-  // Use .text property directly
   return JSON.parse(response.text || "{}");
 };
