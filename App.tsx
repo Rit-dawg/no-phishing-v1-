@@ -366,7 +366,7 @@ const App: React.FC = () => {
 
       <footer className="px-8 py-10 border-t border-white/5 text-center">
          <div className="flex justify-center items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">
-            <span>© 2025 No-Phishing</span>
+            <span> 2026 No-Phishing</span>
             <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
             <a href="cms.html" className="hover:text-cyan-500 transition-colors">Forensic Portal</a>
          </div>
