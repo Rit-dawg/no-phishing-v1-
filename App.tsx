@@ -528,7 +528,7 @@ const App: React.FC = () => {
               </span>
             </div>
             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-              © 2024 Forensic Security Intelligence • Global Defense
+              2026 Rit-dawg
             </p>
           </div>
           <div className="flex justify-center md:justify-end gap-12 text-[10px] font-black uppercase tracking-widest text-zinc-500">
