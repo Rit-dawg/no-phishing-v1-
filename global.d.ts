@@ -33,7 +33,8 @@ declare global {
     AudioContext: typeof AudioContext;
     webkitAudioContext: typeof AudioContext;
     // Fixed: Standardized the aistudio property declaration to avoid modifier mismatch errors.
-    aistudio: AIStudio;
+    // Using optional modifier to match potential external ambient declarations.
+    aistudio?: AIStudio;
   }
 }
 

@@ -143,13 +143,15 @@ const App: React.FC = () => {
         ...prev,
         { role: "analyst", text: result.summary },
       ]);
-    } catch (e) {
+    } catch (e: any) {
+      let errorMessage = "Forensic engine encountered an unexpected error.";
+      if (e?.message?.includes("429")) {
+        errorMessage =
+          "System overloaded. Too many forensic requests. Please wait 60 seconds and try again.";
+      }
       setChatHistory((prev) => [
         ...prev,
-        {
-          role: "analyst",
-          text: "Error in forensic engine. Verify connectivity.",
-        },
+        { role: "analyst", text: errorMessage },
       ]);
     } finally {
       setLoading(false);
@@ -179,6 +181,7 @@ const App: React.FC = () => {
         <a
           href="https://cybercrime.gov.in"
           target="_blank"
+          rel="noreferrer"
           className="text-center py-2 text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest underline"
         >
           cybercrime.gov.in
@@ -522,7 +525,7 @@ const App: React.FC = () => {
 
       <footer className="px-8 py-10 border-t border-white/5 text-center">
         <div className="flex justify-center items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">
-          <span>© 2025 No-Phishing</span>
+          <span> 2026 No-Phishing</span>
           <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
           <a href="cms.html" className="hover:text-cyan-500 transition-colors">
             Forensic Portal

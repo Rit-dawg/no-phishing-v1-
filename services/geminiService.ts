@@ -2,19 +2,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { BlogArticle, PhishingChallenge } from "../types";
 
 export const getGeminiClient = () => {
-  // Vite injects the key via 'define' into process.env.API_KEY
-  // or via import.meta.env.VITE_API_KEY if defined in .env
   const apiKey =
     (typeof process !== "undefined" && process.env?.API_KEY) ||
     (import.meta as any).env?.VITE_API_KEY;
 
-  if (!apiKey || apiKey === "") {
-    console.warn(
-      "API_KEY not found in process.env or import.meta.env. Retrying with direct access check.",
-    );
-  }
-
-  // Final fallback to process.env.API_KEY which is most likely where it's defined
   const finalKey =
     apiKey || (typeof process !== "undefined" ? process.env.API_KEY : "");
 
@@ -124,7 +115,8 @@ export const analyzeSituation = async (
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-image-preview",
+    // Changed from pro-image to flash-preview to avoid 429 rate limits
+    model: "gemini-3-flash-preview",
     contents: { parts },
     config: {
       tools: [{ googleSearch: {} }],
