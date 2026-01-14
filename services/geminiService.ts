@@ -2,16 +2,29 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { BlogArticle, PhishingChallenge } from "../types";
 
 export const getGeminiClient = () => {
-  // Check multiple possible env locations for the key
-  const apiKey = process.env.API_KEY || (process.env as any).VITE_API_KEY;
+  // Vite injects the key via 'define' into process.env.API_KEY
+  // or via import.meta.env.VITE_API_KEY if defined in .env
+  const apiKey =
+    (typeof process !== "undefined" && process.env?.API_KEY) ||
+    (import.meta as any).env?.VITE_API_KEY;
 
-  if (!apiKey) {
-    console.error(
-      "CRITICAL: API_KEY is missing from environment. Forensic engine disabled.",
+  if (!apiKey || apiKey === "") {
+    console.warn(
+      "API_KEY not found in process.env or import.meta.env. Retrying with direct access check.",
     );
-    throw new Error("API_KEY_MISSING");
   }
-  return new GoogleGenAI({ apiKey });
+
+  // Final fallback to process.env.API_KEY which is most likely where it's defined
+  const finalKey =
+    apiKey || (typeof process !== "undefined" ? process.env.API_KEY : "");
+
+  if (!finalKey) {
+    throw new Error(
+      "No connectivity: Forensic engine requires a valid API key.",
+    );
+  }
+
+  return new GoogleGenAI({ apiKey: finalKey });
 };
 
 export const fetchAdvisories = async (): Promise<BlogArticle[]> => {

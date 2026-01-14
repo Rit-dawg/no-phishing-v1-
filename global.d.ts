@@ -13,8 +13,8 @@ declare global {
     }
     interface Process {
       env: ProcessEnv;
-      // Fixed: Aligning with NodeJS.Platform and string to avoid modifier/type mismatch
-      readonly platform: string;
+      // Fixed: Property 'platform' must be of type 'Platform' to match NodeJS internal definitions
+      readonly platform: Platform;
       readonly version: string;
       browser: boolean;
     }
@@ -34,8 +34,9 @@ declare global {
     webkitAudioContext: typeof AudioContext;
     /**
      * Use the interface defined above.
+     * Fixed: Removed modifiers and ensured identical declaration structure to prevent mismatch.
      */
-    readonly aistudio: AIStudio;
+    aistudio: AIStudio;
   }
 }
 
