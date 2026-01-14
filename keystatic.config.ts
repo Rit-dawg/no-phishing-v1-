@@ -1,15 +1,11 @@
-// This file is strictly for Keystatic and should not be imported by the main app bundle.
-// @ts-ignore
-import {
-  config,
-  fields,
-  collection,
-} from "https://esm.sh/@keystatic/core@0.5.48";
+import { config, fields, collection } from "@keystatic/core";
 
 export default config({
   storage: {
-    kind: "github",
-    repo: "Rit-dawg/no-phishing-v1-", // Replace this with your actual GitHub "username/repo-name"
+    kind: "cloud",
+  },
+  cloud: {
+    project: "no-phishing/no-phishing-v1-",
   },
   collections: {
     advisories: collection({
@@ -37,7 +33,10 @@ export default config({
           formatting: true,
           dividers: true,
           links: true,
-          images: true,
+          images: {
+            directory: "public/images/advisories",
+            publicPath: "/images/advisories",
+          },
         }),
       },
     }),
