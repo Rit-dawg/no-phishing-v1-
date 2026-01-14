@@ -1,13 +1,25 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
-import { Page, BlogArticle, RiskAssessment } from "./types";
+import React, { useState, useEffect } from "react";
+import { Page, BlogArticle, RiskAssessment, PhishingChallenge } from "./types";
 import {
   analyzeSituation,
-  generateBlogArticles,
-  getGeminiClient,
+  fetchAdvisories,
+  generateLabChallenges,
 } from "./services/geminiService";
 import { LiveAssistant } from "./components/LiveAssistant";
 
-const KeystaticAdmin = lazy(() => import("./KeystaticWrapper"));
+const RadarPing: React.FC<{ active: boolean }> = ({ active }) => (
+  <div
+    className={`relative w-48 h-48 mx-auto flex items-center justify-center ${active ? "opacity-100" : "opacity-20 transition-opacity"}`}
+  >
+    <div className="absolute inset-0 border border-cyan-500/30 rounded-full"></div>
+    <div className="absolute inset-[25%] border border-cyan-500/20 rounded-full"></div>
+    <div className="absolute inset-[50%] border border-cyan-500/10 rounded-full"></div>
+    <div
+      className={`absolute top-0 left-1/2 w-0.5 h-1/2 bg-gradient-to-t from-cyan-500 to-transparent origin-bottom ${active ? "animate-spin-slow" : ""}`}
+    ></div>
+    <div className="w-3 h-3 bg-cyan-500 rounded-full shadow-[0_0_15px_rgba(6,182,212,1)]"></div>
+  </div>
+);
 
 const Polyhedron: React.FC<{ className?: string; color?: string }> = ({
   className,
@@ -43,12 +55,6 @@ const Polyhedron: React.FC<{ className?: string; color?: string }> = ({
       strokeWidth="0.5"
       strokeOpacity="0.3"
     />
-    <path
-      d="M50 5L10 70M50 5L90 70M10 30L50 95M90 30L50 95"
-      stroke={color}
-      strokeWidth="0.3"
-      strokeOpacity="0.2"
-    />
   </svg>
 );
 
@@ -70,7 +76,6 @@ const GeometricBackground: React.FC<{ score: number }> = ({ score }) => {
       <Polyhedron
         className={`absolute top-20 left-[10%] w-64 h-64 text-[#1cb5c4] ${score > 0 ? "animate-spin-slow" : "animate-pulse"}`}
       />
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-[#0a0a0a]/80 to-[#0a0a0a]"></div>
     </div>
   );
 };
@@ -80,81 +85,44 @@ const App: React.FC = () => {
   const [assessment, setAssessment] = useState<RiskAssessment | null>(null);
   const [loading, setLoading] = useState(false);
   const [articles, setArticles] = useState<BlogArticle[]>([]);
+  const [challenges, setChallenges] = useState<PhishingChallenge[]>([]);
   const [inputContext, setInputContext] = useState("");
   const [chatHistory, setChatHistory] = useState<
-    { role: string; text: string; links?: any[] }[]
+    { role: string; text: string }[]
   >([]);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [copyStatus, setCopyStatus] = useState("Copy Protocol");
-
-  const [leakEmail, setLeakEmail] = useState("");
-  const [leakResult, setLeakResult] = useState<{
-    status: "secure" | "compromised" | "loading" | null;
-    details?: string;
-  }>({ status: null });
-
-  const isAdminPath = window.location.pathname.startsWith("/keystatic");
+  const [labLoading, setLabLoading] = useState(false);
+  const [revealedLab, setRevealedLab] = useState<number[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>(
+    {},
+  );
 
   useEffect(() => {
-    const loadStatic = async () => {
+    const init = async () => {
       try {
-        const art = await generateBlogArticles();
+        const art = await fetchAdvisories();
         setArticles(art);
       } catch (err) {
         console.error(err);
       }
     };
-    if (!isAdminPath) loadStatic();
-  }, [isAdminPath]);
+    init();
+  }, []);
 
-  if (isAdminPath) {
-    return (
-      <Suspense
-        fallback={
-          <div className="min-h-screen bg-black flex items-center justify-center text-cyan-500 font-mono">
-            INITIALIZING_ADMIN_CORE...
-          </div>
-        }
-      >
-        <KeystaticAdmin />
-      </Suspense>
-    );
-  }
-
-  const navigateTo = (p: Page) => {
-    setCurrentPage(p);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleCopyProtocol = () => {
-    if (!assessment) return;
-    const text = `NO-PHISHING EMERGENCY PROTOCOL\nRisk Level: ${assessment.threatLevel} (${assessment.score}%)\n\nSummary: ${assessment.summary}\n\nSteps:\n${assessment.actionSteps.map((s) => `- ${s}`).join("\n")}`;
-    navigator.clipboard.writeText(text);
-    setCopyStatus("Copied!");
-    setTimeout(() => setCopyStatus("Copy Protocol"), 2000);
-  };
-
-  const checkEmailLeak = async () => {
-    if (!leakEmail.includes("@")) return;
-    setLeakResult({ status: "loading" });
+  const startLab = async () => {
+    setLabLoading(true);
+    setRevealedLab([]);
     try {
-      const ai = getGeminiClient();
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Is email "${leakEmail}" in any public scam or breach database? Reply as JSON with fields: status (compromised/secure) and details string.`,
-        config: { tools: [{ googleSearch: {} }] },
-      });
-      const data = JSON.parse(response.text || "{}");
-      setLeakResult({
-        status: data.status === "compromised" ? "compromised" : "secure",
-        details: data.details || "Search complete.",
-      });
-    } catch {
-      setLeakResult({
-        status: "secure",
-        details: "Database unreachable or no leak found.",
-      });
+      const ch = await generateLabChallenges();
+      setChallenges(ch);
+      setCurrentPage(Page.Lab);
+    } finally {
+      setLabLoading(false);
     }
+  };
+
+  const toggleStep = (idx: number) => {
+    setCompletedSteps((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
   const handleAnalyze = async (imageData?: {
@@ -166,6 +134,8 @@ const App: React.FC = () => {
     setChatHistory((prev) => [...prev, { role: "user", text: userText }]);
     setInputContext("");
     setLoading(true);
+    setAssessment(null);
+    setCompletedSteps({});
     try {
       const result = await analyzeSituation(userText, imageData);
       setAssessment(result);
@@ -202,14 +172,14 @@ const App: React.FC = () => {
             </span>
             <span className="text-2xl font-black text-white">1930</span>
           </div>
-          <div className="bg-red-500 text-white px-3 py-1 rounded text-[10px] font-black animate-pulse text-center">
-            REPORT
+          <div className="bg-red-500 text-white px-3 py-1 rounded text-[10px] font-black animate-pulse">
+            REPORT SCAM
           </div>
         </a>
         <a
           href="https://cybercrime.gov.in"
           target="_blank"
-          className="text-center py-2 text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest underline decoration-zinc-800"
+          className="text-center py-2 text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest underline"
         >
           cybercrime.gov.in
         </a>
@@ -218,14 +188,14 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-cyan-500/30 font-inter">
+    <div className="min-h-screen flex flex-col selection:bg-cyan-500/30 font-inter text-zinc-100">
       <GeometricBackground score={assessment?.score || 0} />
 
       <header className="px-8 py-5 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
         <nav className="max-w-7xl mx-auto flex justify-between items-center">
           <div
             className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => navigateTo(Page.Home)}
+            onClick={() => setCurrentPage(Page.Home)}
           >
             <div className="bg-[#1cb5c4] text-black font-black p-1.5 rounded-sm text-xs group-hover:bg-white transition-colors">
               NP
@@ -236,14 +206,20 @@ const App: React.FC = () => {
           </div>
           <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
             <button
-              onClick={() => navigateTo(Page.Detect)}
-              className="hover:text-[#1cb5c4] transition-colors"
+              onClick={() => setCurrentPage(Page.Detect)}
+              className={`hover:text-[#1cb5c4] transition-colors ${currentPage === Page.Detect ? "text-white" : ""}`}
             >
               Scanner
             </button>
             <button
-              onClick={() => navigateTo(Page.Blog)}
-              className="hover:text-[#1cb5c4] transition-colors"
+              onClick={startLab}
+              className={`hover:text-[#1cb5c4] transition-colors ${currentPage === Page.Lab ? "text-white" : ""}`}
+            >
+              Lab
+            </button>
+            <button
+              onClick={() => setCurrentPage(Page.Blog)}
+              className={`hover:text-[#1cb5c4] transition-colors ${currentPage === Page.Blog ? "text-white" : ""}`}
             >
               Advisories
             </button>
@@ -260,101 +236,34 @@ const App: React.FC = () => {
       <main className="flex-grow">
         {currentPage === Page.Home && (
           <div className="space-y-32 pb-40">
-            <section className="relative pt-32 px-8 max-w-7xl mx-auto text-center lg:text-left">
-              <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-12">
-                  <div className="inline-block border border-[#1cb5c4]/30 px-4 py-1 rounded-full bg-[#1cb5c4]/5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1cb5c4]">
-                      Intelligence-Driven Defense
-                    </span>
-                  </div>
-                  <h1 className="text-6xl md:text-[100px] font-black leading-[0.85] tracking-tighter uppercase">
-                    Scams <br /> Have{" "}
-                    <span className="text-[#1cb5c4]">No Room.</span>
-                  </h1>
-                  <p className="text-zinc-400 text-lg max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
-                    Stop threats before they scale. Our AI platform uses
-                    multi-modal reasoning to dismantle social engineering
-                    attempts instantly.
-                  </p>
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                    <button
-                      onClick={() => navigateTo(Page.Detect)}
-                      className="bg-white text-black px-10 py-5 font-black uppercase text-[11px] tracking-widest hover:bg-[#1cb5c4] transition-all"
-                    >
-                      Start Forensic Scan
-                    </button>
-                  </div>
-                </div>
-                <div className="relative hidden lg:block">
-                  <div className="relative border border-white/10 bg-black/40 backdrop-blur-2xl p-10 rounded-2xl shadow-2xl">
-                    <div className="space-y-4 font-mono text-[11px] text-[#1cb5c4]/60">
-                      <p className="flex justify-between">
-                        <span>{"> THREAT_VECTOR_INIT..."}</span>
-                        <span className="text-white">OK</span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>{"> GROUNDING_SEARCH_CORE..."}</span>
-                        <span className="text-white">SYNCED</span>
-                      </p>
-                      <div className="h-px bg-white/10 my-4"></div>
-                      <div className="p-4 bg-red-500/5 border border-red-500/20 rounded">
-                        <p className="text-red-500 font-bold mb-2">
-                          LIVE THREAT MAP
-                        </p>
-                        <div className="h-24 flex items-end gap-1">
-                          {[40, 70, 45, 90, 65, 80, 30, 50, 90, 40, 60].map(
-                            (h, i) => (
-                              <div
-                                key={i}
-                                style={{ height: `${h}%` }}
-                                className="flex-grow bg-red-500/40 rounded-t-sm"
-                              ></div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <section className="relative pt-32 px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
+              <div className="inline-block border border-[#1cb5c4]/30 px-4 py-1 rounded-full bg-[#1cb5c4]/5 mb-8">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#1cb5c4]">
+                  Multi-Modal Threat Detection
+                </span>
               </div>
-            </section>
-
-            <section className="max-w-7xl mx-auto px-8">
-              <div className="bg-zinc-900 border border-[#1cb5c4]/20 rounded-3xl p-12 md:p-16 relative overflow-hidden group">
-                <div className="relative z-10 max-w-2xl">
-                  <span className="text-[10px] font-black text-[#1cb5c4] uppercase tracking-[0.4em] block mb-4">
-                    Breach Database Search
-                  </span>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter mb-8">
-                    Identify <span className="text-red-500">Exposures</span>
-                  </h2>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <input
-                      type="email"
-                      placeholder="Check your email for leaks..."
-                      value={leakEmail}
-                      onChange={(e) => setLeakEmail(e.target.value)}
-                      className="flex-grow bg-black/50 border border-white/10 rounded-lg px-6 py-4 text-sm text-white focus:border-[#1cb5c4] focus:outline-none transition-all"
-                    />
-                    <button
-                      onClick={checkEmailLeak}
-                      className="bg-[#1cb5c4] text-black font-black uppercase text-[10px] tracking-widest px-8 py-4 rounded-lg hover:bg-white transition-all disabled:opacity-50"
-                      disabled={leakResult.status === "loading"}
-                    >
-                      Verify
-                    </button>
-                  </div>
-                  {leakResult.status && (
-                    <div
-                      className={`mt-10 p-6 rounded-xl border animate-in fade-in slide-in-from-top-4 ${leakResult.status === "compromised" ? "bg-red-500/10 border-red-500/30" : "bg-green-500/10 border-green-500/30"}`}
-                    >
-                      <p className="text-xs text-zinc-200 font-mono leading-relaxed">
-                        {leakResult.details}
-                      </p>
-                    </div>
-                  )}
-                </div>
+              <h1 className="text-6xl md:text-[100px] font-black leading-[0.85] tracking-tighter uppercase mb-12">
+                Scams <br /> Have{" "}
+                <span className="text-[#1cb5c4]">No Room.</span>
+              </h1>
+              <p className="text-zinc-400 text-lg max-w-lg mb-12">
+                Dismantle social engineering attempts instantly using AI
+                forensic reasoning. Verify messages, emails, and calls in
+                real-time.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setCurrentPage(Page.Detect)}
+                  className="bg-white text-black px-10 py-5 font-black uppercase text-[11px] tracking-widest hover:bg-[#1cb5c4] transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                >
+                  Start Scanner
+                </button>
+                <button
+                  onClick={startLab}
+                  className="border border-white/20 text-white px-10 py-5 font-black uppercase text-[11px] tracking-widest hover:bg-white/10 transition-all"
+                >
+                  Simulation Lab
+                </button>
               </div>
             </section>
           </div>
@@ -362,23 +271,23 @@ const App: React.FC = () => {
 
         {currentPage === Page.Detect && (
           <section className="max-w-7xl mx-auto px-8 py-20 flex flex-col lg:flex-row gap-12">
-            <div className="flex-grow bg-black/60 border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-2xl min-h-[600px]">
+            <div className="flex-grow bg-black/60 border border-white/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-2xl">
               <div className="p-5 border-b border-white/5 flex justify-between bg-white/5 items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-[#1cb5c4]">
-                    Forensic Terminal
+                    Forensic HUD
                   </span>
                 </div>
               </div>
 
-              <div className="flex-grow p-6 lg:p-10 overflow-y-auto space-y-8 custom-scroll">
+              <div className="flex-grow p-6 lg:p-10 overflow-y-auto space-y-8 min-h-[500px] custom-scroll">
                 {chatHistory.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center space-y-6 py-20 opacity-20">
-                    <Polyhedron className="w-24 h-24 text-white" />
-                    <h2 className="text-xl font-black uppercase tracking-tighter">
-                      Enter Forensic Data
-                    </h2>
+                  <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-30">
+                    <RadarPing active={loading} />
+                    <p className="text-xs font-mono uppercase tracking-[0.3em]">
+                      Awaiting Forensic Input
+                    </p>
                   </div>
                 )}
                 {chatHistory.map((m, i) => (
@@ -387,20 +296,20 @@ const App: React.FC = () => {
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[90%] p-6 lg:p-8 rounded-2xl ${m.role === "user" ? "bg-[#1cb5c4] text-black font-bold" : "bg-zinc-900 border border-white/10 text-zinc-300"}`}
+                      className={`max-w-[85%] p-6 rounded-2xl ${m.role === "user" ? "bg-[#1cb5c4] text-black font-bold" : "bg-zinc-900 border border-white/10 text-zinc-300"}`}
                     >
-                      <p className="text-sm leading-relaxed">{m.text}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {m.text}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl animate-pulse">
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
-                        <div className="w-2 h-2 rounded-full bg-cyan-500 opacity-50"></div>
-                        <div className="w-2 h-2 rounded-full bg-cyan-500 opacity-20"></div>
-                      </div>
+                    <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl animate-pulse flex gap-3">
+                      <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500/50"></div>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500/20"></div>
                     </div>
                   </div>
                 )}
@@ -417,102 +326,207 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="w-full lg:w-[450px] space-y-8">
-              {assessment && (
-                <div className="bg-zinc-900 border border-white/10 p-10 rounded-2xl shadow-2xl animate-in slide-in-from-right-8 duration-500">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 block">
-                    Risk Assessment Report
-                  </span>
+            <div className="w-full lg:w-[400px] space-y-8">
+              {assessment ? (
+                <div
+                  className={`border p-10 rounded-2xl shadow-2xl animate-in slide-in-from-right-8 ${assessment.score > 60 ? "bg-red-500/10 border-red-500/30" : "bg-zinc-900 border-white/10"}`}
+                >
                   <div className="flex items-baseline gap-4 mb-8">
                     <h3
-                      className={`text-7xl font-black tracking-tighter ${assessment.score > 60 ? "text-red-500" : "text-[#1cb5c4]"}`}
+                      className={`text-6xl font-black tracking-tighter ${assessment.score > 60 ? "text-red-500" : "text-[#1cb5c4]"}`}
                     >
                       {assessment.score}%
                     </h3>
                     <span
-                      className={`text-xs font-black uppercase px-2 py-0.5 rounded ${assessment.score > 60 ? "bg-red-500 text-white" : "bg-[#1cb5c4] text-black"}`}
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${assessment.score > 60 ? "bg-red-500 text-white" : "bg-[#1cb5c4] text-black"}`}
                     >
-                      {assessment.threatLevel}
+                      {assessment.threatLevel} RISK
                     </span>
                   </div>
 
                   <div className="space-y-6">
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/5">
-                      <p className="text-[9px] font-black text-zinc-500 uppercase mb-2">
-                        Reasoning Core
+                    <div>
+                      <p className="text-[9px] font-black text-zinc-500 uppercase mb-2 tracking-widest">
+                        Reasoning
                       </p>
-                      <p className="text-sm text-zinc-200 leading-relaxed font-mono">
+                      <p className="text-xs text-zinc-300 leading-relaxed">
                         {assessment.reasoning}
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      <p className="text-[9px] font-black text-zinc-500 uppercase">
-                        Immediate Action Steps
+                      <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                        Courses of Action
                       </p>
-                      {assessment.actionSteps.map((step, idx) => (
-                        <div
-                          key={idx}
-                          className="flex gap-3 text-sm text-zinc-400"
-                        >
-                          <span className="text-[#1cb5c4] font-black">
-                            {idx + 1}.
-                          </span>
-                          <p>{step}</p>
-                        </div>
-                      ))}
+                      <div className="space-y-2">
+                        {assessment.actionSteps.map((step, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => toggleStep(idx)}
+                            className={`flex gap-3 text-xs p-3 rounded-lg border cursor-pointer transition-all ${completedSteps[idx] ? "bg-green-500/20 border-green-500/40 opacity-50" : "bg-white/5 border-white/10 hover:border-[#1cb5c4]/50"}`}
+                          >
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${completedSteps[idx] ? "bg-green-500 border-green-500" : "border-zinc-600"}`}
+                            >
+                              {completedSteps[idx] && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <p
+                              className={
+                                completedSteps[idx]
+                                  ? "line-through text-zinc-500"
+                                  : "text-zinc-300"
+                              }
+                            >
+                              {step}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    <button
-                      onClick={handleCopyProtocol}
-                      className="w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-widest hover:bg-[#1cb5c4] transition-all rounded"
-                    >
-                      {copyStatus}
-                    </button>
                   </div>
+                </div>
+              ) : (
+                <div className="bg-white/5 border border-white/5 p-10 rounded-2xl text-center">
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+                    Forensic Reports will appear here
+                  </p>
                 </div>
               )}
               <IndiaEmergencySection />
             </div>
           </section>
         )}
+
+        {currentPage === Page.Lab && (
+          <section className="max-w-5xl mx-auto px-8 py-20">
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">
+              Simulation <span className="text-cyan-500">Lab</span>
+            </h2>
+            <p className="text-zinc-500 text-sm mb-12">
+              Practice identifying deceptive links. Click a challenge to reveal
+              its forensic truth.
+            </p>
+
+            <div className="grid gap-6">
+              {challenges.map((c, i) => (
+                <div
+                  key={i}
+                  className={`p-8 bg-zinc-900 border border-white/10 rounded-2xl transition-all cursor-pointer ${revealedLab.includes(i) ? "border-cyan-500/50" : "hover:bg-white/5"}`}
+                  onClick={() =>
+                    !revealedLab.includes(i) && setRevealedLab((p) => [...p, i])
+                  }
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                        {c.label}
+                      </span>
+                      <p className="text-xl font-mono text-white break-all">
+                        {c.url}
+                      </p>
+                    </div>
+                    {!revealedLab.includes(i) ? (
+                      <div className="bg-cyan-500 text-black text-[9px] font-black px-4 py-2 rounded uppercase tracking-widest">
+                        Investigate
+                      </div>
+                    ) : (
+                      <div
+                        className={`text-[9px] font-black px-4 py-2 rounded uppercase tracking-widest ${c.isPhishing ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
+                      >
+                        {c.isPhishing ? "SCAM DETECTED" : "LEGITIMATE"}
+                      </div>
+                    )}
+                  </div>
+                  {revealedLab.includes(i) && (
+                    <div className="mt-6 pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-4">
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        {c.explanation}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={startLab}
+                className="mt-8 text-cyan-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Regenerate Lab Challenges
+              </button>
+            </div>
+          </section>
+        )}
+
+        {currentPage === Page.Blog && (
+          <section className="max-w-7xl mx-auto px-8 py-20">
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-12">
+              Security <span className="text-[#1cb5c4]">Advisories</span>
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {articles.map((art) => (
+                <div
+                  key={art.id}
+                  className="bg-zinc-900 border border-white/5 p-8 rounded-2xl hover:border-[#1cb5c4]/30 transition-all group"
+                >
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-4">
+                    {art.date}
+                  </span>
+                  <h3 className="text-xl font-black uppercase leading-tight mb-4 group-hover:text-[#1cb5c4]">
+                    {art.title}
+                  </h3>
+                  <div
+                    className="text-zinc-500 text-sm leading-relaxed mb-8 prose prose-invert"
+                    dangerouslySetInnerHTML={{ __html: art.content }}
+                  />
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-white">Author:</span>
+                    <span className="text-[#1cb5c4]">{art.author}</span>
+                  </div>
+                </div>
+              ))}
+              {articles.length === 0 && (
+                <div className="col-span-full py-20 text-center opacity-30 uppercase tracking-[0.5em] text-xs">
+                  No entries found in CMS
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </main>
 
-      <footer className="mt-40 border-t border-white/5 py-24 px-8 bg-black">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-3">
-              <div className="bg-[#1cb5c4] text-black p-1.5 text-xs font-black rounded-sm">
-                NP
-              </div>
-              <span className="text-sm font-black uppercase tracking-[0.4em] text-white">
-                No-Phishing
-              </span>
-            </div>
-            <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-              © 2024 Forensic Security Intelligence • Global Defense
-            </p>
-          </div>
-          <div className="flex justify-center md:justify-end gap-12 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-            <button
-              onClick={() => navigateTo(Page.Home)}
-              className="hover:text-white transition-colors"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => navigateTo(Page.Detect)}
-              className="hover:text-white transition-colors"
-            >
-              Scanner
-            </button>
-            <button
-              onClick={() => setShowReportModal(true)}
-              className="hover:text-red-500 transition-colors"
-            >
-              Emergency
-            </button>
-          </div>
+      <footer className="px-8 py-10 border-t border-white/5 text-center">
+        <div className="flex justify-center items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">
+          <span>© 2025 No-Phishing</span>
+          <span className="w-1 h-1 bg-zinc-800 rounded-full"></span>
+          <a href="cms.html" className="hover:text-cyan-500 transition-colors">
+            Forensic Portal
+          </a>
         </div>
       </footer>
 
@@ -525,10 +539,21 @@ const App: React.FC = () => {
             >
               ✕
             </button>
-            <h3 className="text-5xl font-black text-white mb-8 uppercase tracking-tighter">
+            <h3 className="text-4xl font-black text-white mb-8 uppercase tracking-tighter">
               Emergency <span className="text-red-500">Protocol</span>
             </h3>
             <IndiaEmergencySection />
+          </div>
+        </div>
+      )}
+
+      {labLoading && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-cyan-500 text-[10px] font-black uppercase tracking-[0.4em]">
+              Fabricating Challenges...
+            </p>
           </div>
         </div>
       )}

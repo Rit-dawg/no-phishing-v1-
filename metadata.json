@@ -1,9 +1,5 @@
 {
   "name": " No-Phishing",
   "description": "A sophisticated scam detection and prevention platform using Gemini Live API for real-time situational assessment and AI-powered threat analysis.",
-  "requestFramePermissions": [
-    "microphone"
-    "camera"
-  ]
-
+  "requestFramePermissions": ["microphone", "camera"]
 }

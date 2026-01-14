@@ -1,4 +1,3 @@
-
 export interface BlogArticle {
   id: string;
   title: string;
@@ -11,21 +10,23 @@ export interface BlogArticle {
 
 export interface RiskAssessment {
   score: number;
-  threatLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  threatLevel: "Low" | "Medium" | "High" | "Critical";
   summary: string;
   reasoning: string;
   actionSteps: string[];
 }
 
+export interface PhishingChallenge {
+  url: string;
+  isPhishing: boolean;
+  explanation: string;
+  label: string;
+}
+
 export enum Page {
-  Home = 'home',
-  Detect = 'detect',
-  Blog = 'blog',
-  Education = 'education',
-  Recovery = 'recovery',
-  Privacy = 'privacy',
-  Terms = 'terms',
-  Ethics = 'ethics',
-  About = 'about',
-  Admin = 'admin'
+  Home = "home",
+  Detect = "detect",
+  Blog = "blog",
+  Lab = "lab",
+  About = "about",
 }

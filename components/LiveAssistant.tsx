@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { RiskAssessment } from "../types";
 
+// Fix: Standard encoding function for base64 as per guidelines
 function encode(bytes: Uint8Array) {
   let binary = "";
   const len = bytes.byteLength;
@@ -40,6 +41,7 @@ export const LiveAssistant: React.FC<Props> = ({
     setIsActive(false);
     setIsConnecting(false);
     if (sessionRef.current) {
+      // Use .close() on the resolved session
       sessionRef.current.close();
       sessionRef.current = null;
     }
@@ -67,6 +69,7 @@ export const LiveAssistant: React.FC<Props> = ({
 
     setIsConnecting(true);
     try {
+      // Fix: New instance right before connection
       const ai = new GoogleGenAI({ apiKey });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const inputCtx = new (
@@ -74,6 +77,7 @@ export const LiveAssistant: React.FC<Props> = ({
       )({ sampleRate: 16000 });
       audioContextRef.current = inputCtx;
 
+      // Fix: Use gemini-2.5-flash-native-audio-preview-12-2025 for Live API
       const sessionPromise = ai.live.connect({
         model: "gemini-2.5-flash-native-audio-preview-12-2025",
         callbacks: {
@@ -91,6 +95,7 @@ export const LiveAssistant: React.FC<Props> = ({
                 int16[i] = inputData[i] * 32768;
               }
 
+              // Fix: CRITICAL: Solely rely on sessionPromise resolves to send data to avoid race conditions
               sessionPromise
                 .then((session) => {
                   session.sendRealtimeInput({
@@ -106,6 +111,7 @@ export const LiveAssistant: React.FC<Props> = ({
             scriptProcessor.connect(inputCtx.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Fix: Handle transcriptions properly
             if (message.serverContent?.inputTranscription) {
               const text = message.serverContent.inputTranscription.text;
               if (text) {
@@ -128,7 +134,7 @@ export const LiveAssistant: React.FC<Props> = ({
           },
         },
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalities: [Modality.AUDIO], // Must be exactly [Modality.AUDIO]
           inputAudioTranscription: {},
         },
       });
@@ -159,7 +165,7 @@ export const LiveAssistant: React.FC<Props> = ({
             />
           </div>
           <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest flex-grow">
-            Image Attached
+            Visual Evidence Attached
           </span>
           <button
             onClick={() => setPendingImage(null)}
@@ -181,6 +187,7 @@ export const LiveAssistant: React.FC<Props> = ({
 
         <button
           onClick={() => fileInputRef.current?.click()}
+          title="Upload evidence"
           className="p-3 text-zinc-500 hover:text-cyan-400 transition-all"
         >
           <svg
@@ -207,6 +214,7 @@ export const LiveAssistant: React.FC<Props> = ({
         <button
           onClick={isActive ? stopSession : startVoiceCapture}
           disabled={isConnecting}
+          title="Voice Analysis"
           className={`p-3 rounded-full transition-all ${isActive ? "bg-cyan-600 text-white animate-pulse" : "text-zinc-500 hover:text-white"}`}
         >
           <svg
@@ -228,7 +236,11 @@ export const LiveAssistant: React.FC<Props> = ({
           value={externalInput}
           onChange={(e) => setExternalInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isActive ? "Listening..." : "Describe the situation..."}
+          placeholder={
+            isActive
+              ? "Capturing voice transcript..."
+              : "Paste message or describe the scam..."
+          }
           className="flex-grow bg-transparent border-none py-3 px-1 text-sm text-zinc-200 outline-none resize-none max-h-32 min-h-[44px] custom-scroll"
           rows={1}
         />

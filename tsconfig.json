@@ -16,10 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["vite/client"],
-    "paths": {
-      "@keystatic/core/ui": ["./node_modules/@keystatic/core/ui"],
-      "@keystatic/core/vite": ["./node_modules/@keystatic/core/vite"],
-    },
   },
   "include": ["**/*.ts", "**/*.tsx", "global.d.ts", "vite.config.ts"],
 }
