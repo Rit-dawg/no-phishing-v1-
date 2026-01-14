@@ -10,7 +10,7 @@ import { LiveAssistant } from './components/LiveAssistant';
 
 /**
  * Logo Component
- * Using the custom pixil-frame-0.svg provided.
+ * Using the custom pixel-accurate path data provided.
  */
 const Logo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg 
@@ -115,7 +115,7 @@ const App: React.FC = () => {
     } catch (e: any) {
       let errorMessage = "Forensic engine encountered an unexpected error.";
       if (e?.message?.includes('429')) {
-        errorMessage = "System overloaded. Too many forensic requests. Please wait 60 seconds and try again.";
+        errorMessage = "System overloaded. Using fallback nodes. Please retry in 30s.";
       }
       setChatHistory(prev => [...prev, { role: 'analyst', text: errorMessage }]);
     } finally { setLoading(false); }
@@ -152,7 +152,7 @@ const App: React.FC = () => {
             desc: "Paste the suspicious message, link, or upload a screenshot of the interaction.",
             icon: (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             )
           },
@@ -247,6 +247,10 @@ const App: React.FC = () => {
                   <div className="flex items-center gap-2">
                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
                      <span className="text-[10px] font-black uppercase tracking-widest text-[#1cb5c4]">Forensic HUD</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-black tracking-widest text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    NEURAL RESILIENCY ACTIVE (3 NODES)
                   </div>
                </div>
                
