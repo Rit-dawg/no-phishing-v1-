@@ -8,6 +8,26 @@ import {
 } from './services/geminiService';
 import { LiveAssistant } from './components/LiveAssistant';
 
+/**
+ * Logo Component
+ * Using the custom pixil-frame-0.svg provided.
+ */
+const Logo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
+  <svg 
+    viewBox="0 0 1600 1600" 
+    className={`${className} transition-transform duration-300 group-hover:scale-110`}
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M0 0 C137.28 0 274.56 0 416 0 C416 52.8 416 105.6 416 160 C489.92 160 563.84 160 640 160 C640 107.2 640 54.4 640 0 C756.16 0 872.32 0 992 0 C992 47.52 992 95.04 992 144 C1013.12 144 1034.24 144 1056 144 C1056 170.4 1056 196.8 1056 224 C1034.88 224 1013.76 224 992 224 C992 250.4 992 276.8 992 304 C986.72 304 981.44 304 976 304 C976 325.12 976 346.24 976 368 C933.76 368 891.52 368 848 368 C848 426.08 848 484.16 848 544 C784.64 544 721.28 544 656 544 C656 522.88 656 501.76 656 480 C650.72 480 645.44 480 640 480 C640 443.04 640 406.08 640 368 C566.08 368 492.16 368 416 368 C416 426.08 416 484.16 416 544 C278.72 544 141.44 544 0 544 C0 364.48 0 184.96 0 0 Z " fill="#4D6DF3" transform="translate(224,448)"/>
+    <path d="M0 0 C73.92 0 147.84 0 224 0 C224 26.4 224 52.8 224 80 C176.48 80 128.96 80 80 80 C80 106.4 80 132.8 80 160 C127.52 160 175.04 160 224 160 C224 186.4 224 212.8 224 240 C176.48 240 128.96 240 80 240 C80 298.08 80 356.16 80 416 C53.6 416 27.2 416 0 416 C0 278.72 0 141.44 0 0 Z " fill="#FFFFFF" transform="translate(928,512)"/>
+    <path d="M0 0 C26.4 0 52.8 0 80 0 C80 137.28 80 274.56 80 416 C53.6 416 27.2 416 0 416 C0 357.92 0 299.84 0 240 C-21.12 240 -42.24 240 -64 240 C-64 213.6 -64 187.2 -64 160 C-42.88 160 -21.76 160 0 160 C0 107.2 0 54.4 0 0 Z " fill="#FFFFFF" transform="translate(496,512)"/>
+    <path d="M0 0 C21.12 0 42.24 0 64 0 C64 26.4 64 52.8 64 80 C90.4 80 116.8 80 144 80 C144 106.4 144 132.8 144 160 C117.6 160 91.2 160 64 160 C64 223.36 64 286.72 64 352 C69.28 352 74.56 352 80 352 C80 373.12 80 394.24 80 416 C53.6 416 27.2 416 0 416 C0 278.72 0 141.44 0 0 Z " fill="#FFFFFF" transform="translate(288,512)"/>
+    <path d="M0 0 C73.92 0 147.84 0 224 0 C224 26.4 224 52.8 224 80 C150.08 80 76.16 80 0 80 C0 53.6 0 27.2 0 0 Z " fill="#FFFFFF" transform="translate(640,672)"/>
+    <path d="M0 0 C21.12 0 42.24 0 64 0 C64 26.4 64 52.8 64 80 C42.88 80 21.76 80 0 80 C0 53.6 0 27.2 0 0 Z " fill="#FFFFFF" transform="translate(1152,592)"/>
+  </svg>
+);
+
 const RadarPing: React.FC<{ active: boolean }> = ({ active }) => (
   <div className={`relative w-48 h-48 mx-auto flex items-center justify-center ${active ? 'opacity-100' : 'opacity-20 transition-opacity'}`}>
     <div className="absolute inset-0 border border-cyan-500/30 rounded-full"></div>
@@ -184,9 +204,9 @@ const App: React.FC = () => {
       
       <header className="px-8 py-5 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
         <nav className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentPage(Page.Home)}>
-            <div className="bg-[#1cb5c4] text-black font-black p-1.5 rounded-sm text-xs group-hover:bg-white transition-colors">NP</div>
-            <span className="font-black text-lg tracking-tighter uppercase">No-Phishing</span>
+          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setCurrentPage(Page.Home)}>
+            <Logo className="w-10 h-10" />
+            <span className="font-black text-xl tracking-tighter uppercase">No-Phishing</span>
           </div>
           <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
             <button onClick={() => setCurrentPage(Page.Detect)} className={`hover:text-[#1cb5c4] transition-colors ${currentPage === Page.Detect ? 'text-white' : ''}`}>Scanner</button>
