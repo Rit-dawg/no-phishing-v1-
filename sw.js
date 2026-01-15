@@ -1,6 +1,6 @@
 
 const CACHE_NAME = 'ht-np-cache-v3';
-const OFFLINE_URL = '/index.html';
+const OFFLINE_URL = 'rit-dawg/no-phishing-v1-/index.html';
 
 const ASSETS_TO_CACHE = [
   '/',
