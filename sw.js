@@ -3,10 +3,10 @@ const CACHE_NAME = 'ht-np-cache-v3';
 const OFFLINE_URL = '/index.html';
 
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './index.tsx',
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/index.tsx',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600;700;900&display=swap'
 ];
