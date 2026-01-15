@@ -6,6 +6,19 @@ declare global {
    * We declare a global namespace for process instead of trying to augment a module.
    */
   namespace NodeJS {
+    type Platform =
+      | "aix"
+      | "android"
+      | "darwin"
+      | "freebsd"
+      | "haiku"
+      | "linux"
+      | "openbsd"
+      | "sunos"
+      | "win32"
+      | "cygwin"
+      | "netbsd";
+
     interface ProcessEnv {
       readonly API_KEY: string;
       readonly ADMIN_HARDCODED: string;
