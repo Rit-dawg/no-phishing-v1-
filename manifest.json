@@ -3,7 +3,7 @@
   "name": "No-Phishing AI",
   "short_name": "N-P",
   "description": "Multi-modal AI scam detection and forensic analysis platform.",
-  "start_url": "./index.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#4D6DF3",
