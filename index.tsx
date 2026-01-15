@@ -1,28 +1,32 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
 
-const rootElement = document.getElementById("root");
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
 const root = ReactDOM.createRoot(rootElement);
 
-// Simplest possible entry point to avoid build-time resolution errors.
-// We strictly render the App and handle the admin route as a simple conditional
-// or external link to avoid bundling Keystatic's Node-heavy core.
 root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 );
 
-// Safely check for production environment using process.env which is defined in vite.config.ts
-const isProd = process.env.NODE_ENV === "production";
-
-if ("serviceWorker" in navigator && isProd) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+// Register service worker for PWA functionality. 
+// We register it always in browser environments that support it to ensure 
+// the "Install" prompt can be triggered for the user.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('SW registered: ', registration);
+      })
+      .catch(registrationError => {
+        console.log('SW registration failed: ', registrationError);
+      });
   });
 }
